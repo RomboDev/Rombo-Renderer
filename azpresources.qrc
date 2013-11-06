@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/splash.png</file>
+        <file>images/scene_edit_copy.png</file>
+        <file>images/scene_edit_cut.png</file>
+        <file>images/scene_edit_paste.png</file>
+        <file>images/scene_new.png</file>
+        <file>images/scene_open.png</file>
+        <file>images/scene_save.png</file>
+        <file>images/render_start.png</file>
+        <file>images/render_pause.png</file>
+        <file>images/render_stop.png</file>
+    </qresource>
+</RCC>
