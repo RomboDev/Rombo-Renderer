@@ -58,10 +58,8 @@ RomboRenderDevice::RomboRenderDevice( int argc, char *argv[] )
 , argc (argc)
 , argv (argv)
 {
-/*
-	g_device = Device::rtCreateDevice("default", 0);
+	g_device = Device::rtCreateDevice("default");
 	createGlobalObjects();
-*/
 }
 
 

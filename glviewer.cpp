@@ -24,15 +24,17 @@ g_renderState(RSTOPPED)				//!< Start stopped
 
 , m_init_resizing(0)
 
-, m_device_is_painting(false),
-g_iCounter(0),
-g_minIterations(0),
-g_renderregion(false),
-m_rregion_delayed(false),
-g_iVerbose(1)
+, m_device_is_painting(false)
+, g_iCounter(0)
+, g_minIterations(0)
+, g_renderregion(false)
+, m_rregion_delayed(false)
+, g_iVerbose(1)
 
-, m_rcamera(NULL), m_rregion(NULL), m_renderer_ctrl(NULL), m_framebuffer_ctrl(
-NULL)
+, m_rcamera(NULL)
+, m_rregion(NULL)
+, m_renderer_ctrl(NULL)
+, m_framebuffer_ctrl(NULL)
 {
 #ifndef GFXVIEW
 	setFocusPolicy(Qt::StrongFocus); //set initial focus here

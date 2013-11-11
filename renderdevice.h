@@ -24,7 +24,7 @@
 #include "lexers/streamfilters.h"
 #include "lexers/parsestream.h"
 
-#include "loaders/loaders.h"
+#include "device/loaders/loaders.h"
 
 #include "math/math.h"
 #include "math/vec2.h"
@@ -33,7 +33,10 @@
 #include "math/col3.h"
 #include "math/affinespace.h"
 
-#include "device/device.h"
+//#include "device/device.h"
+// -I/home/max/git/embree/examples/renderer/device_singleray
+// -I/home/max/git/embree/examples/renderer/device
+
 
 // include GLUT for display
 // TODO: check if needed also here for Qt
