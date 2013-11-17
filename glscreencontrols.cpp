@@ -934,20 +934,20 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 		int scX = m_scursor_rect.center().x();
 		if(scX<acX)
 		{
-			QPoint ppTopLeft 		(scX, m_bslider_rect.top());
-			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()-1);
+			QPoint ppTopLeft 		(scX, m_bslider_rect.top()+1);
+			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()+0);
 			m_activefield_rect = QRect (ppTopLeft, ppBottomRight);
 		}
 		else if (scX>acX)
 		{
-			QPoint ppTopLeft 		(acX, m_bslider_rect.top());
-			QPoint ppBottomRight 	(scX, m_bslider_rect.bottom()-1);
+			QPoint ppTopLeft 		(acX, m_bslider_rect.top()+1);
+			QPoint ppBottomRight 	(scX, m_bslider_rect.bottom()+0);
 			m_activefield_rect = QRect (ppTopLeft, ppBottomRight);
 		}
 		else if (scX==acX)
 		{
-			QPoint ppTopLeft 		(acX, m_bslider_rect.top());
-			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()-1);
+			QPoint ppTopLeft 		(acX, m_bslider_rect.top()+1);
+			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()+0);
 			m_activefield_rect = QRect (ppTopLeft, ppBottomRight);
 		}
 

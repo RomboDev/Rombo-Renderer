@@ -16,31 +16,35 @@ g_renderState(RSTOPPED)				//!< Start stopped
 , m_fb_render_width(0), m_fb_render_height(0)
 , m_fb_rscene_width(0), m_fb_rscene_height(0)
 
-, m_fb_percent(100), m_fb_zoom(false), m_fb_ispanning(false)
+, m_fb_percent(100)
+, m_fb_zoom(false)
+, m_fb_ispanning(false)
 
-, m_fb_woffset(0), m_fb_hoffset(0), m_fb_oddoffset_x(0), m_fb_oddoffset_y(0)
+, m_fb_woffset(0), m_fb_hoffset(0)
+, m_fb_oddoffset_x(0), m_fb_oddoffset_y(0)
 
 , m_fb_mode(0)
 
 , m_init_resizing(0)
 
 , m_device_is_painting(false)
+
 , g_iCounter(0)
 , g_minIterations(0)
 , g_renderregion(false)
-, m_rregion_delayed(false)
 , g_iVerbose(1)
+, m_rregion_delayed(false)
 
 , m_rcamera(NULL)
 , m_rregion(NULL)
 , m_renderer_ctrl(NULL)
 , m_framebuffer_ctrl(NULL)
 {
-#ifndef GFXVIEW
+
 	setFocusPolicy(Qt::StrongFocus); //set initial focus here
 	setMouseTracking(true);
-#endif
 
+	//! Create render device
 	rrDevice = new embree::RomboRenderDevice(argc, argv);
 
 	// parse command line
@@ -67,7 +71,8 @@ GLViewer::~GLViewer() {
 }
 
 // SLOT: called when File.open from MainWindow
-void GLViewer::parseSceneAndRender(const std::string& iPath) {
+void GLViewer::parseSceneAndRender(const std::string& iPath)
+{
 	if (!rrDevice) {
 		int argc = 1;
 		char* argv[] = { (char*) "", (char*) "" };
@@ -79,8 +84,8 @@ void GLViewer::parseSceneAndRender(const std::string& iPath) {
 
 	if (rrDevice->buildScene(iPath)) {
 		if (rrDevice->sceneHasSize())
-			setFbSceneSize(rrDevice->getFramebufferWidth(),
-					rrDevice->getFramebufferHeight());
+			setFbSceneSize(	rrDevice->getFramebufferWidth(),
+							rrDevice->getFramebufferHeight());
 		else
 			setFbSceneSize(g_width, g_height);
 
@@ -155,8 +160,8 @@ void GLViewer::setRenderStatus(int iR) {
 // SLOT: called from renderregion
 void GLViewer::setRenderRegion(int iX0, int iY0, int iX1, int iY1) {
 
-	std::cout << "iX0: " << iX0 << ", iY0: " << iY0 << ", iX1: " << iX1
-			<< ", iY1: " << iY1 << std::endl;
+	//std::cout << "iX0: " << iX0 << ", iY0: " << iY0 << ", iX1: " << iX1
+	//		<< ", iY1: " << iY1 << std::endl;
 
 	//normalize rregion coords into fb coords
 	iX0 -= m_fb_woffset;
@@ -173,10 +178,11 @@ void GLViewer::setRenderRegion(int iX0, int iY0, int iX1, int iY1) {
 		iX1 = m_fb_render_width;
 	if (iY1 > m_fb_render_width)
 		iY1 = m_fb_render_height;
-
+	/*
 	std::cout << "oX0: " << iX0 << ", oY0: " << iY0 << ", oX1: " << iX1
 			<< ", oY1: " << iY1 << ", m_fb_woffset: " << m_fb_woffset
 			<< ", m_fb_hoffset: " << m_fb_hoffset << std::endl;
+	*/
 
 	//set renderer window
 	rrDevice->setRenderRegionCoords(iX0, iY0, iX1, iY1);
@@ -462,8 +468,7 @@ void GLViewer::setRenderRegionSlot(int iSlot, int iState) {
 							* (m_rr_size.width() * m_rr_size.height()));
 
 			//map to device vram
-			m_rr_onBoardMemPtr[iSlot] = (tVec4f*) pbuffer->map(
-					QGLBuffer::ReadOnly);
+			m_rr_onBoardMemPtr[iSlot] = (tVec4f*) pbuffer->map(QGLBuffer::ReadOnly);
 
 			int X0 = m_rr_topLeft.x();
 			int Y0 = m_rr_topLeft.y();
@@ -477,8 +482,8 @@ void GLViewer::setRenderRegionSlot(int iSlot, int iState) {
 			for (size_t y = Y0; y <= Y1 - 1; y++) {
 				for (size_t x = X0; x <= X1 - 1; x++) {
 					//int i = y*g_width+x;
-					//int i = y*g_width+x;
 					m_rr_onBoardMemPtr[iSlot][o] =
+							//! get RGB slot from framebuffer
 							*((tVec4f*) rrDevice->getFramebufferAt(x, y));
 					o++;
 				}
@@ -667,15 +672,7 @@ void GLViewer::resizeGL(int width, int height) {
 		//delete m_fbo;
 		//m_fbo = new QGLFramebufferObject(viewer_fb_width, viewer_fb_height);
 
-	}/*else
-	 {
-	 //delete fbo and create a new one ...
-	 //this is mainly needed when render fb is larger than widget
-	 //and user changes manually widget size, it does not
-	 //refresh the new QGLFb offset position if not rebuild here
-	 delete m_fbo;
-	 m_fbo = new QGLFramebufferObject(viewer_fb_width, viewer_fb_height);
-	 }*/
+	}
 
 	//delete fbo and create a new one ...
 	//this is mainly needed when render fb is larger than widget
@@ -713,11 +710,7 @@ void GLViewer::resizeGL(int width, int height) {
 /////////////////////////////////////////////////////////////////////////////
 // PaintGL //////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-#ifndef GFXVIEW
 void GLViewer::paintGL()
-#else
-void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
-#endif
 {
 	if (g_renderState == RSTOPPED)
 		return;
@@ -731,12 +724,8 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 	g_resetAccumulation = false;
 
 	//!< OpenGL prepare rendering ///////////////////////////////////////////
-#ifndef GFXVIEW
 	QPainter painter(this);
 	painter.beginNativePainting();
-#else
-	painter->beginNativePainting();
-#endif
 
 	saveGLState();	//!< save GL state
 
@@ -784,9 +773,8 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 		 glPixelTransferf(GL_BLUE_SCALE, 0.5f);
 		 }*/
 
-		//draw render fb to GL framebuffer
-		glDrawPixels((GLsizei) m_fb_width, (GLsizei) m_fb_height, GL_RGBA,
-		GL_FLOAT, ptr);
+		//!> draw render fb to GL framebuffer
+		glDrawPixels((GLsizei) m_fb_width, (GLsizei) m_fb_height, GL_RGB, GL_FLOAT, ptr);
 
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 		glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -834,7 +822,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 
 			int glW = m_rr_size.width();
 			int glH = m_rr_size.height();
-			std::cout << "glW-glH " << glW << ", " << glH << std::endl;
+			//std::cout << "glW-glH " << glW << ", " << glH << std::endl;
 			//std::cout << "--------------------------------" << std::endl;
 
 			if (m_fb_woffset < 0) {
@@ -880,8 +868,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 
 			//draw (stamp, blit) pixels into main fb,
 			//with width(minus divpixels) and height from rregion bbox
-			glDrawPixels((GLsizei) glW - divpixels, (GLsizei) glH, GL_RGBA,
-			GL_FLOAT, ptr);
+			glDrawPixels((GLsizei) glW - divpixels, (GLsizei) glH, GL_RGB, GL_FLOAT, ptr);
 
 			//restore stuff and unbind fb
 			glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -927,8 +914,8 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 				glPixelStorei(GL_UNPACK_SKIP_PIXELS, divpixels);	//divider
 				glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);				//0
 
-				glDrawPixels((GLsizei) m_rr_size.width() - divpixels,
-						(GLsizei) m_rr_size.height(), GL_RGBA, GL_FLOAT, 0);
+				glDrawPixels(	(GLsizei) m_rr_size.width() - divpixels,
+								(GLsizei) m_rr_size.height(), GL_RGB, GL_FLOAT, 0);
 
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 				glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -952,7 +939,6 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 	restoreGLState();	//!< restore GL state for QPainter //////////////////
 
 	//!< Painter overlay ////////////////////////////////////////////////////
-#ifndef GFXVIEW
 	//painter.setRenderHint(QPainter::Antialiasing);
 	//drawInstructions(&painter, g_renderregion);//temp
 
@@ -961,12 +947,6 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 
 	painter.endNativePainting();
 	painter.end();
-#else
-	emit painting (&painter);
-
-	painter->endNativePainting();
-	painter.end();
-#endif
 
 	//!< Verbosity //////////////////////////////////////////////////////////
 	if (g_iVerbose >= 2 && (g_renderState || g_iCounter < g_minIterations)) {
@@ -997,7 +977,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 		g_renderregion = true;					//!< set renderregion
 		rrDevice->setRenderRegion(true); 		//!< update render device
 		rrDevice->setRenderRegionCoords(m_rr_topLeft.x(), m_rr_topLeft.y(),
-				m_rr_bottomRight.x(), m_rr_bottomRight.y());
+										m_rr_bottomRight.x(), m_rr_bottomRight.y());
 		m_rregion_delayed = false;
 	}
 

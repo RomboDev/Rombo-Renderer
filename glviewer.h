@@ -216,7 +216,7 @@ private:
 	embree::RomboRenderDevice *rrDevice;	//!< Rombo Render Device
 
 	//framebuffer stuff
-	struct tVec4f { float x, y, z, w; };	//!< Util for PBOs
+	struct tVec4f { float x, y, z/*, w*/; };	//!< Util for PBOs
 	QGLFramebufferObject *m_fbo;
 
     QGLBuffer * m_rr_pixelbuffer [4];

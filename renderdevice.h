@@ -13,6 +13,7 @@
 #define DEBUGSCENEMEM_xxx
 #define NOLOCALHANDLES_xxx
 
+
 #include "sys/platform.h"
 #include "sys/constants.h"
 #include "sys/filename.h"
@@ -33,9 +34,8 @@
 #include "math/col3.h"
 #include "math/affinespace.h"
 
-//#include "device/device.h"
-// -I/home/max/git/embree/examples/renderer/device_singleray
-// -I/home/max/git/embree/examples/renderer/device
+#include "device/device.h"
+#include "device/handle.h"
 
 
 // include GLUT for display
@@ -94,10 +94,9 @@ public:
 	}
 
 
-	__forceinline void* mapFramebufferPtr (void) const { return NULL; /*g_device->rtMapFrameBuffer(g_frameBuffer);*/ }
-	__forceinline void unmapFramebufferPtr (void) { /*g_device->rtUnmapFrameBuffer(g_frameBuffer);*/ }
-	__forceinline void* getFramebufferAt (size_t& x_i, size_t& y_i) const { return NULL; /*g_device->rtGetFrameBufferAt(g_frameBuffer, x_i, y_i);*/}
-	__forceinline float* getFramebufferRawData () const { return NULL; /*g_device->rtGetFrameBufferRawData(g_frameBuffer);*/ }
+	__forceinline void* mapFramebufferPtr (void) const { return g_device->rtMapFrameBuffer(g_frameBuffer); }
+	__forceinline void unmapFramebufferPtr (void) { g_device->rtUnmapFrameBuffer(g_frameBuffer); }
+	__forceinline void* getFramebufferAt (size_t& x_i, size_t& y_i) const { return g_device->rtGetFrameBufferAt(g_frameBuffer, x_i, y_i); }
 
 	__forceinline size_t getFramebufferWidth () const { return g_width; }
 	__forceinline size_t getFramebufferHeight () const { return g_height; }
@@ -107,7 +106,7 @@ public:
 	__forceinline
 	void newFramebuffer( const size_t w, const size_t h)
 	{
-/*
+
 		#ifdef NOLOCALHANDLES
 		if(g_frameBuffer!=NULL)
 		g_device->rtDestroyFrameBufferData( g_frameBuffer );
@@ -125,15 +124,14 @@ public:
 		}
 
 		//!< WE DON?T REALLY EVER USE A CROPPED FRAMEBUFFER
-		g_frameBuffer = g_device->rtNewFrameBuffer("RGB_FLOAT32",g_width,g_height, g_numBuffers );
-*/
+		g_frameBuffer = g_device->rtNewFrameBuffer("RGB_FLOAT32",g_width, g_height, g_numBuffers );
+
 	}
 
 	//!< render framebuffer
 	__forceinline
 	double renderFrame( const int accumulation )
     {
-/*
 		int accumulate = accumulation ? 0 : g_refine;
 
 		double rt0, rt; //render and display timers
@@ -154,7 +152,6 @@ public:
 		//g_device->rtSwapBuffers(g_frameBuffer);
 
 		return rt;	//return render time
-*/	return 0.0;
     }
 
 
@@ -175,45 +172,41 @@ public:
 	//center camera on mouse pointer
 	inline void focusCamera(const int x, const int y)
 	{
-/*
-        Vec3f p;
+        Vector3f p;
 		#ifdef RIGHTHANDLEDCOORDSYS
         bool hit = g_device->rtPick(g_camera, (g_width-x) / float(g_width), y / float(g_height), g_render_scene, p.x, p.y, p.z);
 		#else
         bool hit = g_device->rtPick(g_camera, x / float(g_width), y / float(g_height), g_render_scene, p.x, p.y, p.z);
 		#endif
         if (hit) {
-          Vec3f v = normalize(g_camLookAt - g_camPos);
-          Vec3f d = p - g_camPos;
+          Vector3f v = normalize(g_camLookAt - g_camPos);
+          Vector3f d = p - g_camPos;
           g_camLookAt = g_camPos + v*dot(d,v);
           g_camSpace = AffineSpace3f::lookAtPoint(g_camPos, g_camLookAt, g_camUp);
         }
 
         updateCamera();
-*/
 	}
 
 	//focus camera on mouse pointer
 	inline void centerCamera(const int x, const int y)
 	{
-/*
-        Vec3f p;
+        Vector3f p;
 		#ifdef RIGHTHANDLEDCOORDSYS
         bool hit = g_device->rtPick(g_camera, (g_width-x) / float(g_width), y / float(g_height), g_render_scene, p.x, p.y, p.z);
 		#else
         bool hit = g_device->rtPick(g_camera, x / float(g_width), y / float(g_height), g_render_scene, p.x, p.y, p.z);
 		#endif
         if (hit) {
-          Vec3f delta = p - g_camLookAt;
-          Vec3f right = cross(normalize(g_camUp),normalize(g_camLookAt-g_camPos));
-          Vec3f offset = dot(delta,right)*right + dot(delta,g_camUp)*g_camUp;
+          Vector3f delta = p - g_camLookAt;
+          Vector3f right = cross(normalize(g_camUp),normalize(g_camLookAt-g_camPos));
+          Vector3f offset = dot(delta,right)*right + dot(delta,g_camUp)*g_camUp;
           g_camLookAt = p;
           g_camPos += offset;
           g_camSpace = AffineSpace3f::lookAtPoint(g_camPos, g_camLookAt, g_camUp);
         }
 
         updateCamera();
-*/
 	}
 
 	//print camera transform
@@ -238,7 +231,6 @@ public:
 
 	void resetRenderer ()
 	{
-/*
 		g_renderer = g_device->rtNewRenderer("pathtracer");
 
 		if (g_depth >= 0) g_device->rtSetInt1(g_renderer, "maxDepth", g_depth);
@@ -247,7 +239,6 @@ public:
 		if (g_backplate) g_device->rtSetImage(g_renderer, "backplate", g_backplate);
 
 		g_device->rtCommit(g_renderer);
-*/
 	}
 	void setRendererSPP (int iSPP) { g_spp = iSPP; resetRenderer(); }
 	void setRendererMaxDepth (int iMaxDepth) { g_depth = iMaxDepth; resetRenderer(); }
@@ -269,7 +260,6 @@ public:
 
 	void resetTonemapper ()
 	{
-/*
 		  g_tonemapper = g_device->rtNewToneMapper("default");
 
 		  g_device->rtSetFloat1 (g_tonemapper, "gamma", g_gamma);
@@ -280,7 +270,6 @@ public:
 		  g_device->rtSetFloat1 (g_tonemapper, "fstop", g_fstop);
 
 		  g_device->rtCommit(g_tonemapper);
-*/
 	}
 
 
@@ -289,24 +278,25 @@ public:
 	bool buildScene(const std::string&);
 	void clearScene();
 	void forceClearAccellMem() { /*g_device->rtCleanThatFuckingMem();*/	}
-	std::string getSceneStats()	const { return "uncomment following..";/*g_device->rtGetSceneStats(g_render_scene).c_str();*/ }
+	std::string getSceneStats()	const { return g_device->rtGetSceneStats(g_render_scene).c_str(); }
 
 	void createGlobalObjects ();
 	void clearGlobalObjects ();
 
 
 	//!< Utilities ////////////////////////////////////////////////////////////////////////////////////////////
-	__forceinline double getSecs() { return 0.0; /*getSeconds();*/ }
+	__forceinline double getSecs() { return getSeconds(); }
 
 
 
 private:
-	static Device* g_device; //|< main device
+	//static Device* g_device; //|< main device
 
 	////////////////////////////////////////////////////////////////////////////////
 	/// Automatic reference counting for local Rombo Handles
 	////////////////////////////////////////////////////////////////////////////////
-	template<typename Type>
+/*
+ 	template<typename Type>
 	class Handle
 	{
 	public:
@@ -355,7 +345,7 @@ private:
 	private:
 		Type handle;
 	};
-
+*/
 
 private:
 
@@ -425,9 +415,9 @@ private:
 	//!< Camera
 
 	// camera settings
-	Vec3f g_camPos;
-	Vec3f g_camLookAt;
-	Vec3f g_camUp;
+	Vector3f g_camPos;
+	Vector3f g_camLookAt;
+	Vector3f g_camUp;
 	float g_camFieldOfView;
 	float g_camRadius;
 
