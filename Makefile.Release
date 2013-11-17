@@ -7,7 +7,7 @@
 
 ####### Compiler, tools and options
 
-CC            = icc
+CC            = icc 
 CXX           = icpc
 DEFINES       = -DQT_WEBKIT -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED
 CFLAGS        = -m64 -pipe -O3 -axSSE4.2 -xSSE4.2 -Wall -W -D_REENTRANT $(DEFINES)
