@@ -5,11 +5,6 @@
  *      Author: max
  *
  * TODO:
- *
- * - fix rregion overflow when view is resized (CRASH!)
- * - fix/inspect new/delete for rregion, corner and mid pts classes !!!!!!!!!!!!!
- * - fix rregion x0 Y0 border defect (not mantaining the correct distance offset)
- * - fix rregion : for the intial rect drawing there's not a min bound to limit rect (as with ctrl pts)
  * - fix LEFTHANDCOORDS drag box bug
  *
  */
@@ -25,12 +20,6 @@
 #include"renderdevice.h"
 
 
-#define GFXVIEW_xxx
-
-#ifdef GFXVIEW
-#include <QGraphicsScene>
-#include <QGraphicsSceneMouseEvent>
-#endif
 QT_FORWARD_DECLARE_CLASS(QBypassWidget)
 
 
@@ -204,11 +193,7 @@ signals:
 	void rrSlotHasChanged(int iSlot, int iState);
 
 public:
-#ifndef GFXVIEW
     RenderRegion(GLViewer *widget);
-#else
-    RenderRegion(QGraphicsScene *widget);
-#endif
     ~RenderRegion ()
     {
     	delete m_slotpoints;
@@ -233,11 +218,7 @@ public:
     inline const QRectF& getBBoxRect(){ return g_rr_screen_rect; };
 
 protected:
-#ifndef GFXVIEW
     inline GLViewer* getHostWidget () const { return m_widget; }
-#else
-    inline QGraphicsScene* getHostWidget () const { return m_widget; }
-#endif
     bool eventFilter (QObject *object, QEvent *event);
 
     inline bool isActive  () const { return g_renderregion; }
@@ -357,11 +338,7 @@ private:
 	RRDivider * m_divider;
 
 	//host widget
-#ifndef GFXVIEW
 	GLViewer * m_widget;
-#else
-	QGraphicsScene* m_widget;
-#endif
 };
 
 #endif /* RENDERREGION_H_ */

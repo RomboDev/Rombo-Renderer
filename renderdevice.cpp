@@ -11,6 +11,7 @@ namespace embree
 //static variables declaration
 //Device* RomboRenderDevice::g_device;
 
+
 RomboRenderDevice::RomboRenderDevice( int argc, char *argv[] )
 : g_render_scene (NULL)
 , g_renderer (NULL)
@@ -18,8 +19,13 @@ RomboRenderDevice::RomboRenderDevice( int argc, char *argv[] )
 , g_frameBuffer (NULL)
 , g_backplate (NULL)
 
+, g_scene ("default")
 , g_accel ("default")
-, g_tri ("default")
+, g_builder ("default")
+, g_traverser ("default")
+
+, g_profiling (false)
+
 , g_depth (-1)
 , g_spp (1)
 , g_mincontribution (0.01f)
@@ -369,6 +375,13 @@ void RomboRenderDevice::parseCommandLine(Ref<ParseStream> cin, const FileName& p
     	g_prims.insert(g_prims.end(), prims.begin(), prims.end());
     }
 
+    /* turn off logging */
+    //else if (tag == "--no-logging")
+    //  log_display = false;
+
+    else if (tag == "-profiling")
+      g_profiling = true;
+
 #ifndef DEBUGSCENEMEM
     // triangulated sphere
     else if (tag == "-trisphere")
@@ -405,6 +418,22 @@ void RomboRenderDevice::parseCommandLine(Ref<ParseStream> cin, const FileName& p
       g_device->rtSetFloat3(light, "I", I.r, I.g, I.b);
       g_device->rtCommit(light);
       g_prims.push_back(g_device->rtNewLightPrimitive(light, NULL));
+    }
+
+    else if (tag == "-masked_pointlight") {
+      Handle<Device::RTLight> light = g_device->rtNewLight("pointlight");
+      const Vector3f P = cin->getVector3f();
+      const Color I = cin->getColor();
+      int illumMask = cin->getInt();
+      int shadowMask = cin->getInt();
+      g_device->rtSetFloat3(light, "P", P.x, P.y, P.z);
+      g_device->rtSetFloat3(light, "I", I.r, I.g, I.b);
+      g_device->rtCommit(light);
+      Handle<Device::RTPrimitive> prim = g_device->rtNewLightPrimitive(light, NULL, NULL);
+      g_device->rtSetInt1(prim,"illumMask",illumMask);
+      g_device->rtSetInt1(prim,"shadowMask",shadowMask);
+      g_device->rtCommit(prim);
+      g_prims.push_back(prim);
     }
 
     // directional light source
@@ -516,12 +545,20 @@ void RomboRenderDevice::parseCommandLine(Ref<ParseStream> cin, const FileName& p
       g_scene_has_size = true;
     }
 
-
     // acceleration structure to use
-    else if (tag == "-accel") g_accel = cin->getString();
+    else if (tag == "-accel") {
+      g_accel = g_mesh_accel = cin->getString();
+    }
 
-    // triangle representation to use
-    else if (tag == "-tri") g_tri = cin->getString();
+    // builder to use
+    else if (tag == "-builder") {
+      g_builder = g_mesh_builder = cin->getString();
+    }
+
+    // traverser to use
+    else if (tag == "-traverser") {
+      g_traverser = g_mesh_traverser = cin->getString();
+    }
 
 
     // set renderer
@@ -701,9 +738,9 @@ void RomboRenderDevice::setupScene(const AffineSpace3f& camera, float s)
 
 	//! Init scene
 	g_render_scene = g_device->rtNewScene("default");
-    g_device->rtSetString(g_render_scene, "accel", "default"); //g_accel.c_str()
-    g_device->rtSetString(g_render_scene, "builder", "default"); //g_builder.c_str()
-    g_device->rtSetString(g_render_scene, "traverser", "default"); //g_traverser.c_str()
+    g_device->rtSetString(g_render_scene, "accel", g_accel.c_str());
+    g_device->rtSetString(g_render_scene, "builder", g_builder.c_str());
+    g_device->rtSetString(g_render_scene, "traverser", g_traverser.c_str());
 
     //! Instance geemetry to scene
     for (size_t i=0; i<g_prims.size(); i++) g_device->rtSetPrimitive(g_render_scene, i, g_prims[i]);

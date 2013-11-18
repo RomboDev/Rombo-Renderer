@@ -1,5 +1,5 @@
 #!/bin/sh
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/lib/intel64/
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/max/git/oiio/dist/linux64/lib/
 export LD_LIBRARY_PATH
 /home/max/git/rombo/Rombo

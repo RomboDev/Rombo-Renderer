@@ -382,8 +382,13 @@ private:
 
 
 	// rendering settings
+	std::string g_scene;
 	std::string g_accel;
-	std::string g_tri;
+	std::string g_builder;
+	std::string g_traverser;
+
+	// logging settings
+	bool g_profiling = false;
 
 	int g_depth;            	//!< recursion depth
 	int g_spp;              	//!< samples per pixel for ordinary rendering

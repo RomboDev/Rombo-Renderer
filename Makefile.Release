@@ -10,8 +10,8 @@
 CC            = icc 
 CXX           = icpc
 DEFINES       = -DQT_WEBKIT -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED
-CFLAGS        = -m64 -pipe -O3 -axSSE4.2 -xSSE4.2 -Wall -W -D_REENTRANT $(DEFINES)
-CXXFLAGS      = -m64 -pipe -O3 -axSSE4.2 -xSSE4.2 -Wall -W -D_REENTRANT $(DEFINES)
+CFLAGS        = -m64 -pipe -fno-rtti -DNORTTI -O3 -axSSE4.2 -xSSE4.2 -Wall -W -D_REENTRANT $(DEFINES)
+CXXFLAGS      = -m64 -pipe -fno-rtti -DNORTTI -O3 -axSSE4.2 -xSSE4.2 -Wall -W -D_REENTRANT $(DEFINES)
 INCPATH       = -I/usr/share/qt4/mkspecs/default -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include/QtOpenGL -I/usr/include -I/usr/X11R6/include -Irelease -I. -I/home/max/git/embree/embree -I/home/max/git/embree/examples/common  -I/home/max/git/embree/examples/renderer
 LINK          = icpc
 LFLAGS        = -m64 -Wl,-O3 -static-intel
