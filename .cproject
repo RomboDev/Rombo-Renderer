@@ -249,8 +249,8 @@
 		<pathentry include="/home/max/git/embree/examples/renderer" kind="inc" path="" system="true"/>
 		<pathentry include="/home/max/git/embree/examples/renderer/device" kind="inc" path="" system="true"/>
 		<pathentry include="/home/max/git/embree/examples/common" kind="inc" path="" system="true"/>
-		<pathentry excluding="glviewer/" kind="src" path=""/>
+		<pathentry excluding="glviewer/|source/" kind="src" path=""/>
 		<pathentry kind="out" path=""/>
-		<pathentry kind="src" path="glviewer"/>
+		<pathentry kind="src" path="source"/>
 	</storageModule>
 </cproject>

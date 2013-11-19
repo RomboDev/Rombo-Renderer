@@ -3,25 +3,25 @@ TARGET = Rombo
 
 QT        += core gui opengl 
 
-HEADERS   += rombo.h \
-			renderdevice.h \
-			IGLViewerDevice.h \
-			glviewer.h \
-		    glviewer/glrendercamera.h \
-		    glviewer/glrenderregion.h \
-		    glviewer/gloverlaycontrols.h \
-		    glviewer/glframebufferctrls.h \
-		    glviewer/glrendererctrls.h
+HEADERS   += source/rombo.h \
+			source/renderdevice.h \
+			source/glviewer.h \
+			source/glviewer/IGLViewerDevice.h \
+		    source/glviewer/glrendercamera.h \
+		    source/glviewer/glrenderregion.h \
+		    source/glviewer/gloverlaycontrols.h \
+		    source/glviewer/glframebufferctrls.h \
+		    source/glviewer/glrendererctrls.h
 		    
-SOURCES   += main.cpp \
-    		rombo.cpp \
-    		renderdevice.cpp \
-    		glviewer.cpp \
-		    glviewer/glrendercamera.cpp \
-		    glviewer/glrenderregion.cpp \
-		    glviewer/gloverlaycontrols.cpp \
-		    glviewer/glframebufferctrls.cpp \
-		    glviewer/glrendererctrls.cpp 
+SOURCES   += source/main.cpp \
+    		source/rombo.cpp \
+    		source/renderdevice.cpp \
+    		source/glviewer.cpp \
+		    source/glviewer/glrendercamera.cpp \
+		    source/glviewer/glrenderregion.cpp \
+		    source/glviewer/gloverlaycontrols.cpp \
+		    source/glviewer/glframebufferctrls.cpp \
+		    source/glviewer/glrendererctrls.cpp 
     		
 FORMS     += rombo.ui    
 RESOURCES += azpresources.qrc

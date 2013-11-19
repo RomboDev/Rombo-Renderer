@@ -17,7 +17,7 @@
 
 #include "renderdevice.h"
 
-#include "IGLViewerDevice.h"
+#include "glviewer/IGLViewerDevice.h"
 #include "glviewer/glrendercamera.h"
 #include "glviewer/glrenderregion.h"
 #include "glviewer/gloverlaycontrols.h"
