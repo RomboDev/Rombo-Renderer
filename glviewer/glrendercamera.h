@@ -9,7 +9,7 @@
 #define GLRENDERCAMERA_H_
 
 #include <QtGui>
-#include "glviewer.h"
+#include "../glviewer.h"
 
 class GLViewer;
 

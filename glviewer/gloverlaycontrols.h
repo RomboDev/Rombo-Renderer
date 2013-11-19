@@ -5,21 +5,22 @@
  *      Author: max
  */
 
-#ifndef GLSCREENCONTROLS_H_
-#define GLSCREENCONTROLS_H_
+#ifndef GLOVERLAYCONTROLS_H_
+#define GLOVERLAYCONTROLS_H_
 
 
 #include <QtGui>
 QT_FORWARD_DECLARE_CLASS(QBypassWidget)
 
 
-#include "glviewer.h"
+#include "../glviewer.h"
 
 #include <iostream> //temp for debug->cout
 
 class GLViewer;
 class OverlayItem;
 class OverlayItemsController;
+
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interface to [sub]items custom builders
@@ -295,6 +296,7 @@ public:
 	  m_dec_digits (0),
 	  m_cur_decdigits (0),
 	  m_cur_intdigits(0),
+	  m_data(0),
 	  m_data_changed (false),
 	  m_not_hidden (false) {}
 	~OverlayNumericPad () { destroyPad(); }
@@ -692,28 +694,20 @@ public:
     	TOPRIGHT
     };
 
-    //OverlayItemsController () {}
-	#ifndef GFXVIEW
     OverlayItemsController (GLViewer *widget, OverlayItemsBuilder * iBuilder);
-	#endif
-    OverlayItemsController (QGraphicsScene *widget, OverlayItemsBuilder * iBuilder);
     ~OverlayItemsController();
 
     inline bool isEnabled () const { return m_is_enabled; }
-
     inline bool isPainting () const { return m_is_painting; }
-
-    inline int getParentHeight () const;
-    inline int getParentWidth () const;
 
     inline QVector<OverlayItem*> * getItems () { return &m_ctrls; }
     inline QVector<OverlayItem*> * getSubitems () const { return m_host_ctrls; }
     inline OverlayItem* getItem (int iID) { return m_ctrls[iID]; }
     inline OverlayItem* getSubitem (int iID) const { return (*m_host_ctrls)[iID]; }
 
-    void setBckPixmaps (const QString & iBck);
+    void setBckPixmaps (const QString & iBck) { m_qpixmap = new QPixmap (iBck); }
 
-    void setLayout (int ilay);
+    void setLayout (int ilay) { m_layout_type = ilay; setPositionFromLayout (ilay); }
     void setPositionFromLayout (int ilay);
     void setItemsStartingPos (int ipos) { m_items_startpos = ipos; }
 
@@ -722,11 +716,7 @@ public:
 
     void reset ();
 
-	#ifndef GFXVIEW
-	inline GLViewer * getParentWidget () const;
-	#else
-	inline QGraphicsScene const * getParentWidget () const { return m_widget; }
-	#endif
+	inline GLViewer * getParentWidget () const{ return m_widget; }
 
     void paint (QPainter* iPainter);
 
@@ -759,7 +749,6 @@ protected:
     void setIsPainting (bool ipaint=true)
     {
     	m_is_painting = ipaint;
-
     	emit devicePainting (ipaint);	//!< emit painting signal
     }
 
@@ -816,267 +805,14 @@ private:
     QVector<OverlayItem*> * m_host_ctrls;
 
 	//host widget
-	#ifndef GFXVIEW
     GLViewer * m_widget;
-	#else
-    QGraphicsScene * m_widget;
-	#endif
 };
 
 
-
-// TO BE MOVED ////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-// Renderer settings //////////////////////////////////////////////////////////////////////////////////////////
-
-// custom rendersettings subitems builder
-class OverlayRenderSettingsBuilder: public OverlayItemsBuilder
-{
-public:
-	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iSubitems, int iPos);
-};
-
-// render settings class
-class OverlayRendererSettingsItem: public OverlayAnimSubItem
-{
-	Q_OBJECT
-public:
-	OverlayRendererSettingsItem (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder)
-	: OverlayAnimSubItem (iFactory, iID, iBuilder) {};
-	OverlayRendererSettingsItem (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
-							   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
-	: OverlayAnimSubItem (iFactory, iID, iBuilder)
-	{
-		setPosition (iPos);
-		setPositionEnd (iEnd);
-		setPositionAlone (iTarget);
-
-		///////////////////////////////////////////////////////////
-		connect (	this, SIGNAL 	(subitems_ready	(int)), 		//this comes from base class (OverlayAnimSubItem)
-					this, SLOT 		(bind_subitems	(int)) );		//calling this specialized slot
-	};
-	~OverlayRendererSettingsItem ()
-	{
-		disconnect (	this, SIGNAL 	(subitems_ready	(int)),		//probably not needed
-						this, SLOT 		(bind_subitems	(int)) );
-	}
-private slots:
-	void bind_subitems (int iID);
-	void valueChanged_slot (int data, int decdigits, int id);
-};
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "glframebufferctrls.h"
+#include "glrendererctrls.h"
 
 
-
-// Camera settings ////////////////////////////////////////////////////////////////////////////////////////////
-
-// custom rendersettings subitems builder
-class OverlayCameraSettingsBuilder: public OverlayItemsBuilder
-{
-public:
-	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iSubitems, int iPos);
-};
-
-// render settings class
-class OverlayCameraSettingsItem: public OverlayAnimSubItem
-{
-	Q_OBJECT
-public:
-	OverlayCameraSettingsItem (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
-							   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
-	: OverlayAnimSubItem (iFactory, iID, iBuilder),
-	  m_rr_active (false), m_cammouse_mode (0),
-	  m_cammouse_clickX (0), m_cammouse_clickY (0), m_cammouse_tracking (false),
-	  m_active_id (-1), m_in_action (false)
-	{
-		setPosition (iPos);
-		setPositionEnd (iEnd);
-		setPositionAlone (iTarget);
-
-		///////////////////////////////////////////////////////////
-		connect (	this, SIGNAL 	(subitems_ready	(int)), 		//this comes from base class (OverlayAnimSubItem)
-					this, SLOT 		(bind_subitems	(int)) );		//calling this specialized slot
-	};
-	~OverlayCameraSettingsItem ()
-	{
-		disconnect (	this, SIGNAL 	(subitems_ready	(int)),		//probably not needed
-						this, SLOT 		(bind_subitems	(int)) );
-	}
-
-protected:
-	void drawInstructions(QPainter *painter, int context, int width, int height);
-	void resetActionButton ();
-
-	virtual void paint (QPainter* iPainter);
-    virtual bool eventFilter (QObject *object, QEvent *event);
-
-private slots:
-	void bind_subitems (int iID);
-	void valueChanged_slot (int data, int decdigits, int id);
-	void button_pressed_slot (bool pressed, int id);
-
-private:
-	bool m_rr_active;
-	int m_cammouse_mode;
-	int m_cammouse_clickX;
-	int m_cammouse_clickY;
-	bool m_cammouse_tracking;
-
-	int m_active_id;
-	bool m_in_action;
-};
-
-
-
-// Tonemapper settings ////////////////////////////////////////////////////////////////////////////////////////
-
-// custom rendersettings subitems builder
-class OverlayTonemapperSettingsBuilder: public OverlayItemsBuilder
-{
-public:
-	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iSubitems, int iPos);
-};
-
-// render settings class
-class OverlayTonemapperSettingsItem: public OverlayAnimSubItem
-{
-	Q_OBJECT
-public:
-	OverlayTonemapperSettingsItem (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
-							   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
-	: OverlayAnimSubItem (iFactory, iID, iBuilder)
-	{
-		setPosition (iPos);
-		setPositionEnd (iEnd);
-		setPositionAlone (iTarget);
-
-		///////////////////////////////////////////////////////////
-		connect (	this, SIGNAL 	(subitems_ready	(int)), 		//this comes from base class (OverlayAnimSubItem)
-					this, SLOT 		(bind_subitems	(int)) );		//calling this specialized slot
-	};
-	~OverlayTonemapperSettingsItem ()
-	{
-		disconnect (	this, SIGNAL 	(subitems_ready	(int)),		//probably not needed
-						this, SLOT 		(bind_subitems	(int)) );
-	}
-private slots:
-	void bind_subitems (int iID);
-	void valueChanged_slot (int data, int decdigits, int id);
-	void button_pressed_slot (bool pressed, int id);
-};
-
-
-
-// renderer controller ////////////////////////////////////////////////////////////////////////////////////////
-
-// renderer controller item builder
-class OverlayRendererCtrlsBuilder: public OverlayItemsBuilder
-{
-public:
-	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iItems, int iPos);
-};
-
-
-// renderer bar controller
-class OverlayRendererCtrls: public OverlayItemsController
-{
-	Q_OBJECT
-public:
-	OverlayRendererCtrls (GLViewer *iWidget)
-	: OverlayItemsController(iWidget, new OverlayRendererCtrlsBuilder())
-	{}
-
-private slots:
-    void slot_items_ready () {}
-	void slot_subitems_ready (int iID)
-	{
-		/*std::cout << "Subitems READY: " << iID << std::endl;
-		QVector<OverlayItem*> * tt = getSubitems ();
-		OverlayItem* myItem = getSubitem (0);
-		std::cout << tt->size() << std::endl;
-		std::cout << myItem->getCurrentPos().topLeft().x() << std::endl;*/
-	}
-};
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Framebuffer controls ///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-// Main controller ////////////////////////////////////////////////////////////////////////////////////////////
-
-// main controller item builder
-class OverlayFramebufferCtrlsBuilder: public OverlayItemsBuilder
-{
-public:
-	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iItems, int iPos);
-};
-
-
-// main bar controller
-class OverlayFramebufferCtrls: public OverlayItemsController
-{
-	Q_OBJECT
-public:
-	OverlayFramebufferCtrls (GLViewer *iWidget)
-	: OverlayItemsController(iWidget, new OverlayFramebufferCtrlsBuilder())
-	{
-
-		///////////////////////////////////////////////////////////
-		connect (	this, SIGNAL 	(items_ready ()),
-					this, SLOT 		(slot_items_ready ()) );
-		connect (	this, SIGNAL 	(anim_ended	(int,int)),
-					this, SLOT 		(slot_items_endanimready (int,int)) );
-
-		connect (	this, SIGNAL 	(resized ()),
-					this, SLOT 		(slot_resized ()) );
-	}
-
-private slots:
-	void button_pressed_slot (bool pressed, int id);
-	void valueChanged_slot (int data, int decdigits, int id);
-
-    void slot_items_ready ()
-    {
-    	for (int i=0; i<getItems()->size(); i++)
-    	{
-    		if(i<2)
-    		{
-    			connect (	getItem(i), 	SIGNAL 	( dataChanged (int,int, int)),
-    						this, 			SLOT 	( valueChanged_slot (int,int, int)) );
-
-    		}else
-    		if(i<6)
-    		{
-    			connect (	getItem(i), 	SIGNAL 	( button_pressed (bool,int)),
-    						this, 			SLOT 	( button_pressed_slot (bool,int)) );
-    		}else
-			if(i==6)
-			{
-    			connect (	getItem(i), 	SIGNAL 	( dataChanged (int,int, int)),
-    						this, 			SLOT 	( valueChanged_slot (int,int, int)) );
-			}
-    	}
-    }
-	void slot_items_endanimready (int animstate, int last_item) {}
-	void slot_resized ();
-};
-
-
-
-
-
-
-#endif /* GLSCREENCONTROLS_H_ */
+#endif /* GLOVERLAYCONTROLS_H_ */

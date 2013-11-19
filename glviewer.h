@@ -15,16 +15,17 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 
-#include "IGLViewerDevice.h"
-#include"renderdevice.h"
-#include"glrendercamera.h"
-#include"glrenderregion.h"
-#include"glscreencontrols.h"
+#include "renderdevice.h"
 
+#include "IGLViewerDevice.h"
+#include "glviewer/glrendercamera.h"
+#include "glviewer/glrenderregion.h"
+#include "glviewer/gloverlaycontrols.h"
 
 class RenderCamera;
 class RenderRegion;
 class OverlayItemsController;
+
 
 class GLViewer : public QGLWidget
 {
@@ -36,13 +37,13 @@ public:
 
 
 	//!< Framebuffer //////////////////////////////////////////////////////////////////////////////////////////
-	inline int getWidgetWidth() const { return g_width; }
-	inline int getWidgetHeight() const { return g_height; }
-	inline size_t getFbWidth() const { return m_fb_width; }
-	inline size_t getFbHeight() const { return m_fb_height; }
+	int getWidgetWidth() const { return g_width; }
+	int getWidgetHeight() const { return g_height; }
+	size_t getFbWidth() const { return m_fb_width; }
+	size_t getFbHeight() const { return m_fb_height; }
 
-	inline int getOffsetWidth() const { return m_fb_woffset; }
-	inline int getOffsetHeight() const { return m_fb_hoffset; }
+	int getOffsetWidth() const { return m_fb_woffset; }
+	int getOffsetHeight() const { return m_fb_hoffset; }
 	void setOffsetWidth (int ioff, bool ispan=true) { m_fb_woffset = ioff; m_fb_ispanning = ispan; }
 	void setOffsetHeight (int ioff, bool ispan=true) { m_fb_hoffset = ioff; m_fb_ispanning = ispan; }
 
@@ -54,8 +55,8 @@ public:
 		m_fb_rscene_height = iheight;
 	}
 
-	inline size_t getFbSceneWidth () const { return m_fb_render_width; }
-	inline size_t getFbSceneHeight () const { return m_fb_render_height; }
+	size_t getFbSceneWidth () const { return m_fb_render_width; }
+	size_t getFbSceneHeight () const { return m_fb_render_height; }
 
 	bool fbNeedsNavigator ()
 	{
@@ -73,10 +74,10 @@ public:
 	}
 
 	void setFbScenePercent (int iper, bool only=false)	{ m_fb_percent = iper; if(!only) {m_init_resizing = m_fb_zoom; resizeGL (g_width,g_height);} }
-	inline int getFbScenePercent () const { return m_fb_percent; }
+	int getFbScenePercent () const { return m_fb_percent; }
 
 	void setFbZoomMode (bool izoom=true) { m_fb_zoom = izoom; m_init_resizing = 0; resizeGL (g_width,g_height); }
-	inline bool getFbZoomMode () const { return m_fb_zoom; }
+	bool getFbZoomMode () const { return m_fb_zoom; }
 
 	enum FRAMEBUFFERMODE
 	{
@@ -88,7 +89,7 @@ public:
 	inline bool isFullFbWidget() const { return m_fb_woffset==0 && m_fb_hoffset==0; }
 
 	void setFramebufferMode (FRAMEBUFFERMODE istich=STICHTOWIDGET) { m_fb_mode = istich; m_init_resizing = 0; resizeGL (g_width,g_height); }
-	inline int getFramebufferMode () const { return m_fb_mode; }
+	int getFramebufferMode () const { return m_fb_mode; }
 
 
 	//!< Renderer /////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,50 +115,50 @@ public:
 		g_renderState = 1;
 	}
 
-	inline bool isRenderRegion() const { return g_renderregion; }
-	inline void setIsRenderRegion (bool irr) { g_renderregion = irr; }
+	bool isRenderRegion() const { return g_renderregion; }
+	void setIsRenderRegion (bool irr) { g_renderregion = irr; }
 	void setRenderRegionHasInvalidatedContext (bool inv);
 	void initRenderRegion ();
 	void updateRenderRegion ();
 
-	inline int getRenderState() const { return g_renderState; }
-	inline bool renderIsStopped() const { return g_renderState==RSTOPPED; }
-	inline bool renderIsPaused() const { return g_renderState==RPAUSED; }
-	inline bool renderIsStarted() const { return g_renderState==RSTARTED; }
+	int getRenderState() const { return g_renderState; }
+	bool renderIsStopped() const { return g_renderState==RSTOPPED; }
+	bool renderIsPaused() const { return g_renderState==RPAUSED; }
+	bool renderIsStarted() const { return g_renderState==RSTARTED; }
 
-	__forceinline int getRendererSPP () const { return rrDevice->getRendererSPP(); }
-	__forceinline int getRendererMaxDepth () const { return rrDevice->getRendererMaxDepth(); }
-	__forceinline float getRendererMinContribution () const { return rrDevice->getRendererMinContribution(); }
+	int getRendererSPP () const { return rrDevice->getRendererSPP(); }
+	int getRendererMaxDepth () const { return rrDevice->getRendererMaxDepth(); }
+	float getRendererMinContribution () const { return rrDevice->getRendererMinContribution(); }
 
-	inline void setRendererSPP (int iSPP) { rrDevice->setRendererSPP (iSPP); resetAccumulation(); }
-	inline void setRendererMaxDepth (int iMaxDepth) { rrDevice->setRendererMaxDepth (iMaxDepth); resetAccumulation(); }
-	inline void setRendererMinContribution (float iMinContribution) { rrDevice->setRendererMinContribution (iMinContribution); resetAccumulation(); }
+	void setRendererSPP (int iSPP) { rrDevice->setRendererSPP (iSPP); resetAccumulation(); }
+	void setRendererMaxDepth (int iMaxDepth) { rrDevice->setRendererMaxDepth (iMaxDepth); resetAccumulation(); }
+	void setRendererMinContribution (float iMinContribution) { rrDevice->setRendererMinContribution (iMinContribution); resetAccumulation(); }
 
 
 	//!< Camera ///////////////////////////////////////////////////////////////////////////////////////////////
-	inline void updateRenderCamera() { rrDevice->updateCamera(); }
-	inline void centerRenderCamera (int iX, int iY){ rrDevice->centerCamera( iX, iY); }
-	inline void focusRenderCamera (int iX, int iY){ rrDevice->focusCamera( iX, iY); }
-	inline void updateRenderCameraMove (int iMouseMode, int iX, int iY, int iMcX, int iMcY, int wid_width){ rrDevice->updateCameraMove( iMouseMode, iX, iY, iMcX, iMcY, wid_width ); }
-	inline void setRenderCameraFOV (float ifov) { rrDevice->setCameraFOV (ifov); }
-	inline float getRenderCameraFOV () { return rrDevice->getCameraFOV(); }
-	inline void incRenderCameraRadius() { rrDevice->incCameraRadius(); }
-	inline void setRenderCameraRadius(const float ir) { rrDevice->setCameraRadius(ir); }
-	__forceinline float getRenderCameraRadius() const { return rrDevice->getCameraRadius(); }
-	inline void printRenderCameraTransformStr() { emit verboseStream (rrDevice->getCameraTransformStr().c_str()); }
+	void updateRenderCamera() { rrDevice->updateCamera(); }
+	void centerRenderCamera (int iX, int iY){ rrDevice->centerCamera( iX, iY); }
+	void focusRenderCamera (int iX, int iY){ rrDevice->focusCamera( iX, iY); }
+	void updateRenderCameraMove (int iMouseMode, int iX, int iY, int iMcX, int iMcY, int wid_width){ rrDevice->updateCameraMove( iMouseMode, iX, iY, iMcX, iMcY, wid_width ); }
+	void setRenderCameraFOV (float ifov) { rrDevice->setCameraFOV (ifov); }
+	float getRenderCameraFOV () { return rrDevice->getCameraFOV(); }
+	void incRenderCameraRadius() { rrDevice->incCameraRadius(); }
+	void setRenderCameraRadius(const float ir) { rrDevice->setCameraRadius(ir); }
+	float getRenderCameraRadius() const { return rrDevice->getCameraRadius(); }
+	void printRenderCameraTransformStr() { emit verboseStream (rrDevice->getCameraTransformStr().c_str()); }
 
 
 	//!< Tonamapper ///////////////////////////////////////////////////////////////////////////////////////////
-	__forceinline float getTonemapperGamma () const { return rrDevice->getTonemapperGamma(); }
+	float getTonemapperGamma () const { return rrDevice->getTonemapperGamma(); }
 	void setTonemapperGamma (float igamma) { rrDevice->setTonemapperGamma(igamma); rrDevice->resetTonemapper(); }
-	__forceinline bool getTonemapperVignetting () const { return rrDevice->getTonemapperVignetting(); }
+	bool getTonemapperVignetting () const { return rrDevice->getTonemapperVignetting(); }
 	void setTonemapperVignetting (bool ivignette) { rrDevice->setTonemapperVignetting(ivignette); rrDevice->resetTonemapper(); }
 
-	__forceinline float getTonemapperSensitivity () const { return rrDevice->getTonemapperSensitivity(); }
+	float getTonemapperSensitivity () const { return rrDevice->getTonemapperSensitivity(); }
 	void setTonemapperSensitivity (float isensitivity) { rrDevice->setTonemapperSensitivity(isensitivity); rrDevice->resetTonemapper(); }
-	__forceinline float getTonemapperExposure () const { return rrDevice->getTonemapperExposure(); }
+	float getTonemapperExposure () const { return rrDevice->getTonemapperExposure(); }
 	void setTonemapperExposure (float iexp) { rrDevice->setTonemapperExposure(iexp); rrDevice->resetTonemapper(); }
-	__forceinline float getTonemapperFStop () const { return rrDevice->getTonemapperFStop(); }
+	float getTonemapperFStop () const { return rrDevice->getTonemapperFStop(); }
 	void setTonemapperFStop (float ifstop) { rrDevice->setTonemapperFStop(ifstop); rrDevice->resetTonemapper(); }
 
 
@@ -208,9 +209,9 @@ protected:
     void keyPressEvent (QKeyEvent *e);
 
 private:
-	__forceinline void saveGLState();
-	__forceinline void restoreGLState();
-	__forceinline void drawInstructions(QPainter *painter, int context=0);
+	void saveGLState();
+	void restoreGLState();
+	void drawInstructions(QPainter *painter, int context=0);
 
 private:
 	embree::RomboRenderDevice *rrDevice;	//!< Rombo Render Device
@@ -267,22 +268,22 @@ private:
 	unsigned int g_minIterations;	// for 'paused' mode, to get a bit of refinement
 	bool g_resetAccumulation;		// clear accumulation
 
+	// render verbosity
+	int g_iVerbose;
+
 	// render camera
 	RenderCamera * m_rcamera;
 
 	// render region
+	RenderRegion * m_rregion;
 	bool g_renderregion;
 	bool m_rregion_delayed;
-	RenderRegion * m_rregion;
 
 	// renderer setting controls
 	OverlayItemsController * m_renderer_ctrl;
 
 	// framebuffer controls
 	OverlayItemsController * m_framebuffer_ctrl;
-
-	// render verbosity
-	int g_iVerbose;
 };
 
 

@@ -16,8 +16,8 @@
 //#include <QtGui>
 #include <QApplication>
 
-#include "glviewer.h"
-#include"renderdevice.h"
+#include "../glviewer.h"
+#include "../renderdevice.h"
 
 
 QT_FORWARD_DECLARE_CLASS(QBypassWidget)

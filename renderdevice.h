@@ -277,7 +277,7 @@ public:
 	void parseCmdLine(int argc, char** argv);
 	bool buildScene(const std::string&);
 	void clearScene();
-	void forceClearAccellMem() { /*g_device->rtCleanThatFuckingMem();*/	}
+	//void forceClearAccellMem() { g_device->rtCleanThatFuckingMem(); }
 	std::string getSceneStats()	const { return g_device->rtGetSceneStats(g_render_scene).c_str(); }
 
 	void createGlobalObjects ();
@@ -440,7 +440,6 @@ private:
 	int argc;
 	char** argv;
 };
-
 
 }	//end namespace embree
 #endif /* ROMBORENDER_H_ */
