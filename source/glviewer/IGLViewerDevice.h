@@ -28,6 +28,7 @@ public slots:
 	virtual void viewerInit () = 0;
 	virtual void viewerResized () = 0;
 	virtual void viewerPaint (QPainter* iPainter) = 0;
+    virtual void viewerUndoRedo (int id, int slot, int idata) = 0;
 
 public:
 	virtual void registerDevice () = 0;

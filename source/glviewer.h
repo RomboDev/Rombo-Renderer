@@ -28,7 +28,51 @@ class RenderRegion;
 class OverlayItemsController;
 
 
-class GLViewer : public QGLWidget
+
+class UndoRedo : public QObject
+{
+	Q_OBJECT
+signals:
+	void undo_redo (int id, int slot, int idata);
+
+public:
+	UndoRedo (QObject* iWidget) : m_glUndoStack (new QUndoStack(iWidget)) {}
+	~UndoRedo (){ delete m_glUndoStack; }
+
+	QUndoStack* getStack() const { return m_glUndoStack; }
+
+	void initUndoRedo (int id, int slot, int idata)	{ emit undo_redo (id, slot, idata);	}
+	void connectDevice (OverlayItemsController* iSettingCtrl);
+
+private:
+	// Undo/Redo stack
+	QUndoStack *m_glUndoStack;
+};
+
+class UndoRedoBase
+{
+public:
+	UndoRedoBase (QObject* iWidget ) : m_undoredo (new UndoRedo (iWidget)) {}
+	~UndoRedoBase (){ delete m_undoredo; }
+
+	void initUndoRedo (int id, int slot, int idata)	{ m_undoredo->initUndoRedo (id, slot, idata); }
+
+	void undoCmd () { m_undoredo->getStack()->undo(); }
+	void redoCmd () { m_undoredo->getStack()->redo(); }
+	void pushCmd (QUndoCommand * iCommand) { m_undoredo->getStack()->push(iCommand); }
+
+	void addUndoRedoToDevice (OverlayItemsController* iSettingCtrl)
+	{
+		m_undoredo->connectDevice (iSettingCtrl);
+	}
+private:
+	UndoRedo * m_undoredo;
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GLViewer : public QGLWidget, public UndoRedoBase
 {
 	Q_OBJECT
 
@@ -36,7 +80,6 @@ public:
 	GLViewer ( int argc, char *argv[] );
 	~GLViewer ();
 
-	QUndoStack* getStack() { return m_glUndoStack; }
 
 	//!< Framebuffer //////////////////////////////////////////////////////////////////////////////////////////
 	int getWidgetWidth() const { return g_width; }
@@ -95,40 +138,6 @@ public:
 
 
 	//!< Renderer /////////////////////////////////////////////////////////////////////////////////////////////
-	 class glRendererCommand : public QUndoCommand
-	 {
-	 public:
-		 glRendererCommand(int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent = 0)
-	 	 	 : QUndoCommand(parent), lastCommand(nbCmd), newData(iData), glViewer(iViewer)
-	 	 {
-			 switch(nbCmd)
-			 {
-			 case 0:
-				 lastData = glViewer->getRendererMaxDepth();
-				 glViewer->setRendererMaxDepth (newData.toInt());
-				 break;
-			 case 1:
-				 lastData = glViewer->getRendererSPP();
-				 glViewer->setRendererSPP (newData.toInt());
-				 break;
-			 case 2:
-				 lastData = glViewer->getRendererMinContribution();
-				 glViewer->setRendererMinContribution (newData.toFloat());
-				 break;
-			 }
-	 	 }
-		 ~glRendererCommand(){glViewer=NULL;}
-
-	     void undo();
-	     void redo();
-
-	 private:
-	     int lastCommand;
-	     QVariant lastData;
-	     QVariant newData;
-	     GLViewer * glViewer;
-	 };
-
 	void resetAccumulation ()
 	{
 		g_iCounter = 0;
@@ -151,8 +160,6 @@ public:
 		g_renderState = 1;
 	}
 
-	OverlayItemsController* getRendererSettingGlDevice () { return m_renderer_ctrl; }
-
 	bool isRenderRegion() const { return g_renderregion; }
 	void setIsRenderRegion (bool irr) { g_renderregion = irr; }
 	void setRenderRegionHasInvalidatedContext (bool inv);
@@ -172,6 +179,7 @@ public:
 	void setRendererMaxDepth (int iMaxDepth) { rrDevice->setRendererMaxDepth (iMaxDepth); resetAccumulation(); }
 	void setRendererMinContribution (float iMinContribution) { rrDevice->setRendererMinContribution (iMinContribution); resetAccumulation(); }
 
+	OverlayItemsController* getRendererSettingGlDevice () const { return m_renderer_ctrl; }
 
 	//!< Camera ///////////////////////////////////////////////////////////////////////////////////////////////
 	void updateRenderCamera() { rrDevice->updateCamera(); }
@@ -209,10 +217,8 @@ signals:
 	void rendererStatus(int);
 
 	void init ();
-	//void resized (int,int);
 	void resized ();
 	void painting (QPainter*);
-	void undo_redo (int id, int slot, int idata);
 
 public slots:
 	void parseSceneAndRender(const std::string&);
@@ -225,16 +231,6 @@ public slots:
 	void deviceIsPainting (bool ispainting) { m_device_is_painting = ispainting; }
 
 protected:
-	bool m_device_is_painting;
-	void registerDevice (IGLViewerDevice* iDevice)
-	{
-		connect (iDevice, 	SIGNAL (isPainting(bool)),
-				this, 		SLOT (deviceIsPainting(bool)) );
-
-		connect (this, 		SIGNAL (resized()),
-				iDevice, 	SLOT (viewerResized()) );
-	}
-
 	// OpenGL
     void initializeGL ();
     void resizeGL (int width, int height);
@@ -311,6 +307,8 @@ private:
 	// render verbosity
 	int g_iVerbose;
 
+	bool m_device_is_painting;
+
 	// render camera
 	RenderCamera * m_rcamera;
 
@@ -324,9 +322,6 @@ private:
 
 	// framebuffer controls
 	OverlayItemsController * m_framebuffer_ctrl;
-
-	// Undo/Redo stack
-	QUndoStack *m_glUndoStack;
 };
 
 

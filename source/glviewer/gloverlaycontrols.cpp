@@ -2022,12 +2022,12 @@ void OverlayItemsController::anim_ctrl()
 	m_widget->update(); 							//!< refresh widget manually
 }
 
-void OverlayItemsController::undoredo_called(int id, int slot, int idata)
+void OverlayItemsController::viewerUndoRedo(int id, int slot, int idata)
 {
 	if(!m_is_enabled || getActiveDevice()!=id) return;
 	std::cout << "OverlayCtrl->UndoRedo slot called, id: " << id << " , slot: " << slot << " , data: " << idata << std::endl;
 
-	emit undo_redo_items (slot, idata);
+	emit undo_redo_items (slot, idata); //! emit signal to broadcast undo/redo changes to active setting gl devices
 }
 
 void OverlayItemsController::paint (QPainter* iPainter)

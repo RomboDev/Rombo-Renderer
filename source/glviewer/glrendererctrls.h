@@ -11,6 +11,7 @@
 
 #include "gloverlaycontrols.h"
 
+#include <QUndoCommand>
 
 // base class with common signaling
 class OverlayRendererSettingsItemBase: public OverlayAnimSubItem
@@ -18,8 +19,8 @@ class OverlayRendererSettingsItemBase: public OverlayAnimSubItem
 	Q_OBJECT
 
 public:
-	OverlayRendererSettingsItemBase (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
-							   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
+	OverlayRendererSettingsItemBase (	OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
+							   	   	   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
 	: OverlayAnimSubItem (iFactory, iID, iBuilder)
 	{
 		setPosition (iPos);
@@ -46,16 +47,17 @@ private slots:
 };
 
 
-// Renderer settings //////////////////////////////////////////////////////////////////////////////////////////
 
-// custom rendersettings subitems builder
+// Render settings ////////////////////////////////////////////////////////////////////////////////////////////
+
+// render settings subitems builder
 class OverlayRenderSettingsBuilder: public OverlayItemsBuilder
 {
 public:
 	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iSubitems, int iPos);
 };
 
-// render settings class
+// render settings
 class OverlayRendererSettingsItem: public OverlayRendererSettingsItemBase
 {
 	Q_OBJECT
@@ -68,6 +70,23 @@ private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
 	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
+};
+
+// render settings undo/redo
+class OverlayRenderSettingsCommand : public QUndoCommand
+{
+public:
+	OverlayRenderSettingsCommand(int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent = 0);
+	~OverlayRenderSettingsCommand();
+
+    void undo();
+    void redo();
+
+private:
+    int lastCommand;
+    QVariant lastData;
+    QVariant newData;
+    GLViewer * glViewer;
 };
 
 

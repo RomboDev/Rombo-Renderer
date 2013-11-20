@@ -65,33 +65,97 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 	switch (id)
 	{
 	case 0:	//MaxDepth GLViewer
-		if(tViewer->getRendererMaxDepth() != data ){
-			//tViewer->setRendererMaxDepth (data);
-
+		if(tViewer->getRendererMaxDepth() != data )
+		{
 			std::cout << "PUSHdepth!" << std::endl;
-			QUndoCommand *rCommand = new GLViewer::glRendererCommand (0, data, tViewer);
-			tViewer->getStack()->push (rCommand);
+			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (0, data, tViewer);
+			tViewer->pushCmd (rCommand);
 		}
 		break;
 	case 1:	//SPP
-		if(tViewer->getRendererSPP() != data ){
-			//tViewer->setRendererSPP (data);
+		if(tViewer->getRendererSPP() != data )
+		{
 			std::cout << "PUSHspp!" << std::endl;
-			QUndoCommand *rCommand = new GLViewer::glRendererCommand (1, data, tViewer);
-			tViewer->getStack()->push (rCommand);
+			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (1, data, tViewer);
+			tViewer->pushCmd (rCommand);
 		}
 		break;
 	case 2:	//MinContribution
 		float rdata = data / pow(10,decdigits);
-		if(tViewer->getRendererMinContribution() != rdata ){
-			//tViewer->setRendererMinContribution (rdata);
+		if(tViewer->getRendererMinContribution() != rdata )
+		{
 			std::cout << "PUSHminc!" << std::endl;
-			QUndoCommand *rCommand = new GLViewer::glRendererCommand (2, rdata, tViewer);
-			tViewer->getStack()->push (rCommand);
+			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (2, rdata, tViewer);
+			tViewer->pushCmd (rCommand);
 		}
 		break;
 	}
 }
+
+// setup undo/redo commands
+// TODO:  	- when floats we need to transform them into ints for undo/redo
+// 			- check beginGroup or somethins like that to 'merge' cmds if slider is moved manually !!
+OverlayRenderSettingsCommand::OverlayRenderSettingsCommand
+(int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent)
+: QUndoCommand(parent), lastCommand(nbCmd), newData(iData), glViewer(iViewer)
+{
+	switch(nbCmd)
+	{
+	case 0:
+		lastData = glViewer->getRendererMaxDepth();
+		glViewer->setRendererMaxDepth (newData.toInt());
+		break;
+	case 1:
+		lastData = glViewer->getRendererSPP();
+		glViewer->setRendererSPP (newData.toInt());
+		break;
+	case 2:
+		lastData = glViewer->getRendererMinContribution();
+		glViewer->setRendererMinContribution (newData.toFloat());
+		break;
+	}
+}
+
+OverlayRenderSettingsCommand::~OverlayRenderSettingsCommand() { glViewer=NULL; }
+
+void OverlayRenderSettingsCommand::undo()
+{
+	 switch(lastCommand)
+	 {
+	 case 0:
+		 glViewer->setRendererMaxDepth (lastData.toInt());
+		 break;
+	 case 1:
+		 glViewer->setRendererSPP (lastData.toInt());
+		 break;
+	 case 2:
+		 glViewer->setRendererMinContribution (lastData.toFloat());
+		 break;
+	 }
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
+		 glViewer->initUndoRedo (1, lastCommand, lastData.toInt());
+	 }
+}
+
+void OverlayRenderSettingsCommand::redo()
+{
+	 switch(lastCommand)
+	 {
+	 case 0:
+		 glViewer->setRendererMaxDepth (newData.toInt());
+		 break;
+	 case 1:
+		 glViewer->setRendererSPP (newData.toInt());
+		 break;
+	 case 2:
+		 glViewer->setRendererMinContribution (newData.toFloat());
+		 break;
+	 }
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
+		 glViewer->initUndoRedo (1, lastCommand, newData.toInt());
+	 }
+}
+
 
 
 // Camera settings //////////////////////////////////////////////////////////////////////////////////////////

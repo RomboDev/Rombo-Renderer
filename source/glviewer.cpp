@@ -8,42 +8,10 @@
 #include "glviewer.h"
 
 
-void GLViewer::glRendererCommand::undo()
+void UndoRedo::connectDevice (OverlayItemsController* iSettingCtrl)
 {
-	 switch(lastCommand)
-	 {
-	 case 0:
-		 glViewer->setRendererMaxDepth (lastData.toInt());
-		 break;
-	 case 1:
-		 glViewer->setRendererSPP (lastData.toInt());
-		 break;
-	 case 2:
-		 glViewer->setRendererMinContribution (lastData.toFloat());
-		 break;
-	 }
-	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
-		 glViewer->emit undo_redo (1, lastCommand, lastData.toInt());
-	 }
-}
-
-void GLViewer::glRendererCommand::redo()
-{
-	 switch(lastCommand)
-	 {
-	 case 0:
-		 glViewer->setRendererMaxDepth (newData.toInt());
-		 break;
-	 case 1:
-		 glViewer->setRendererSPP (newData.toInt());
-		 break;
-	 case 2:
-		 glViewer->setRendererMinContribution (newData.toFloat());
-		 break;
-	 }
-	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
-		 glViewer->emit undo_redo (1, lastCommand, newData.toInt());
-	 }
+	connect (	this, 			SIGNAL 	(undo_redo			(int, int, int)),
+				iSettingCtrl, 	SLOT 	(viewerUndoRedo		(int, int, int)) );
 }
 
 
@@ -85,10 +53,8 @@ g_renderState(RSTOPPED)				//!< Start stopped
 , m_renderer_ctrl(NULL)
 , m_framebuffer_ctrl(NULL)
 
-, m_glUndoStack(NULL)
+, UndoRedoBase (this)
 {
-	m_glUndoStack =  new QUndoStack(this);
-
 	setFocusPolicy(Qt::StrongFocus); //set initial focus here
 	setMouseTracking(true);
 
@@ -104,7 +70,6 @@ g_renderState(RSTOPPED)				//!< Start stopped
 
 GLViewer::~GLViewer() {
 	//rrDevice is being deleted in flushScene()
-	delete m_glUndoStack;
 
 	delete m_rcamera;
 	delete m_rregion;
@@ -147,10 +112,8 @@ void GLViewer::parseSceneAndRender(const std::string& iPath)
 		//! renderer overlay settings ctrls
 		m_renderer_ctrl = new OverlayRendererCtrls(this);
 		m_renderer_ctrl->setLayout(OverlayItemsController::BOTTOMLEFT);
-		m_renderer_ctrl->setBckPixmaps(
-				"./images/gloverlay/main_settings_in.png");
-		connect (	this, 				SIGNAL 	(undo_redo			(int, int, int)),
-					m_renderer_ctrl, 	SLOT 	(undoredo_called	(int, int, int)) );
+		m_renderer_ctrl->setBckPixmaps( "./images/gloverlay/main_settings_in.png" );
+		addUndoRedoToDevice (m_renderer_ctrl);
 
 
 		//! framebuffer overlay settings ctrls
@@ -302,10 +265,10 @@ void GLViewer::keyPressEvent(QKeyEvent* e) {
 	}
 	// TEST /////////////////////////
 	else if (e->key() == Qt::Key_K) {
-		m_glUndoStack->undo();
+		undoCmd();
 	}
 	else if (e->key() == Qt::Key_J) {
-		m_glUndoStack->redo();
+		redoCmd();
 	}
 }
 

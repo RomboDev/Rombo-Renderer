@@ -777,12 +777,11 @@ protected:
 
 private slots:
     void anim_ctrl();
-    void undoredo_called(int id, int slot, int idata);
 
 	virtual void viewerInit () {};
-    //virtual void viewerResized (int iwidth, int iheight);
     virtual void viewerResized ();
 	virtual void viewerPaint (QPainter* iPainter) { this->paint(iPainter); }
+    virtual void viewerUndoRedo(int id, int slot, int idata);
 
 private:
     virtual void registerDevice ();
