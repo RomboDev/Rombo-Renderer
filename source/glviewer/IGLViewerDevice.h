@@ -10,7 +10,7 @@
 
 #include <QtGui>
 
-class IGLViewerDevice:public QObject
+class IGLViewerDevice : public QObject
 {
 	Q_OBJECT
 public:

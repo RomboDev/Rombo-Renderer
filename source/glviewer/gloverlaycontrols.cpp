@@ -1666,6 +1666,8 @@ OverlayItemsController::OverlayItemsController (GLViewer *widget, OverlayItemsBu
 , m_items_startpos (56)
 
 , m_hasno_subitems (false)
+
+, m_active_device (-1)
 {
 	m_widget_size.setWidth (m_widget->getWidgetWidth());
 	m_widget_size.setHeight (m_widget->getWidgetHeight());
@@ -2020,6 +2022,14 @@ void OverlayItemsController::anim_ctrl()
 	m_widget->update(); 							//!< refresh widget manually
 }
 
+void OverlayItemsController::undoredo_called(int id, int slot, int idata)
+{
+	if(!m_is_enabled || getActiveDevice()!=id) return;
+	std::cout << "OverlayCtrl->UndoRedo slot called, id: " << id << " , slot: " << slot << " , data: " << idata << std::endl;
+
+	emit undo_redo_items (slot, idata);
+}
+
 void OverlayItemsController::paint (QPainter* iPainter)
 {
 	iPainter->setOpacity (0.6);
@@ -2058,10 +2068,12 @@ bool OverlayItemsController::eventFilter (QObject *object, QEvent *event)
 						{
 							//install event filter on items
 							//if(m_hasno_subitems==false)
-							for (int i=0; i<m_ctrls.size(); i++)
+							for (int i=0; i<m_ctrls.size(); i++){
 							connect(this, 		 SIGNAL (anim_ended(int,int)),
 									m_ctrls [i], SLOT 	(anim_has_ended(int,int)));
-
+							connect(this, 		 SIGNAL (undo_redo_items(int,int)),
+									m_ctrls [i], SLOT 	(undoredo_called(int,int)));
+							}
 							emit items_ready ();
 						}
 					}

@@ -36,10 +36,13 @@ public:
 		disconnect (	this, SIGNAL 	(subitems_ready	(int)),		//probably not needed
 						this, SLOT 		(bind_subitems	(int)) );
 	}
+signals:
+	void undoredo_slot (int id, int idata);
 
 private slots:
 	virtual void bind_subitems (int iID) =0;
 	virtual void valueChanged_slot (int data, int decdigits, int id) =0;
+	virtual void undoredo_called (int id, int idata) =0;
 };
 
 
@@ -64,6 +67,7 @@ public:
 private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
+	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
 };
 
 
@@ -101,6 +105,7 @@ private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
 	void button_pressed_slot (bool pressed, int id);
+	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
 
 private:
 	bool m_rr_active;
@@ -137,11 +142,14 @@ private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
 	void button_pressed_slot (bool pressed, int id);
+	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
 };
 
 
 
-// renderer controller ////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Renderer Controller ////////////////////////////////////////////////////////////////////////////////////////
 
 // renderer controller item builder
 class OverlayRendererCtrlsBuilder: public OverlayItemsBuilder
@@ -156,18 +164,17 @@ class OverlayRendererCtrls: public OverlayItemsController
 	Q_OBJECT
 public:
 	OverlayRendererCtrls (GLViewer *iWidget)
-	: OverlayItemsController(iWidget, new OverlayRendererCtrlsBuilder())
-	{}
+	: OverlayItemsController(iWidget, new OverlayRendererCtrlsBuilder()) {}
 
 private slots:
     void slot_items_ready () {}
 	void slot_subitems_ready (int iID)
 	{
-		/*std::cout << "Subitems READY: " << iID << std::endl;
+		std::cout << "Subitems READY: " << iID << std::endl;
 		QVector<OverlayItem*> * tt = getSubitems ();
 		OverlayItem* myItem = getSubitem (0);
 		std::cout << tt->size() << std::endl;
-		std::cout << myItem->getCurrentPos().topLeft().x() << std::endl;*/
+		std::cout << myItem->getCurrentPos().topLeft().x() << std::endl;
 	}
 };
 

@@ -10,10 +10,11 @@
 
 
 #include <QGLWidget>
-#include <QGLFramebufferObject>
 #include <QGLBuffer>
+#include <QGLFramebufferObject>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <QUndoCommand>
 
 #include "renderdevice.h"
 
@@ -35,6 +36,7 @@ public:
 	GLViewer ( int argc, char *argv[] );
 	~GLViewer ();
 
+	QUndoStack* getStack() { return m_glUndoStack; }
 
 	//!< Framebuffer //////////////////////////////////////////////////////////////////////////////////////////
 	int getWidgetWidth() const { return g_width; }
@@ -93,6 +95,40 @@ public:
 
 
 	//!< Renderer /////////////////////////////////////////////////////////////////////////////////////////////
+	 class glRendererCommand : public QUndoCommand
+	 {
+	 public:
+		 glRendererCommand(int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent = 0)
+	 	 	 : QUndoCommand(parent), lastCommand(nbCmd), newData(iData), glViewer(iViewer)
+	 	 {
+			 switch(nbCmd)
+			 {
+			 case 0:
+				 lastData = glViewer->getRendererMaxDepth();
+				 glViewer->setRendererMaxDepth (newData.toInt());
+				 break;
+			 case 1:
+				 lastData = glViewer->getRendererSPP();
+				 glViewer->setRendererSPP (newData.toInt());
+				 break;
+			 case 2:
+				 lastData = glViewer->getRendererMinContribution();
+				 glViewer->setRendererMinContribution (newData.toFloat());
+				 break;
+			 }
+	 	 }
+		 ~glRendererCommand(){glViewer=NULL;}
+
+	     void undo();
+	     void redo();
+
+	 private:
+	     int lastCommand;
+	     QVariant lastData;
+	     QVariant newData;
+	     GLViewer * glViewer;
+	 };
+
 	void resetAccumulation ()
 	{
 		g_iCounter = 0;
@@ -114,6 +150,8 @@ public:
 		g_resetAccumulation = false;
 		g_renderState = 1;
 	}
+
+	OverlayItemsController* getRendererSettingGlDevice () { return m_renderer_ctrl; }
 
 	bool isRenderRegion() const { return g_renderregion; }
 	void setIsRenderRegion (bool irr) { g_renderregion = irr; }
@@ -165,6 +203,7 @@ public:
 	//!< RenderRegion /////////////////////////////////////////////////////////////////////////////////////////
 	QRect getRenderRegionCoords (bool widcoords);
 
+
 signals:
 	void verboseStream(QString);
 	void rendererStatus(int);
@@ -173,6 +212,7 @@ signals:
 	//void resized (int,int);
 	void resized ();
 	void painting (QPainter*);
+	void undo_redo (int id, int slot, int idata);
 
 public slots:
 	void parseSceneAndRender(const std::string&);
@@ -201,11 +241,11 @@ protected:
     void paintGL ();
 
     // Mouse Events
-    void mouseMoveEvent (QMouseEvent  *e);
-    void mousePressEvent (QMouseEvent  *e);
-    void mouseReleaseEvent (QMouseEvent  *e);
+    void mouseMoveEvent (QMouseEvent *e);
+    void mousePressEvent (QMouseEvent *e);
+    void mouseReleaseEvent (QMouseEvent *e);
 
-
+    // Keyboard Events
     void keyPressEvent (QKeyEvent *e);
 
 private:
@@ -214,7 +254,7 @@ private:
 	void drawInstructions(QPainter *painter, int context=0);
 
 private:
-	embree::RomboRenderDevice *rrDevice;	//!< Rombo Render Device
+	embree::RomboRenderDevice *rrDevice;		//!< Rombo Render Device
 
 	//framebuffer stuff
 	struct tVec4f { float x, y, z/*, w*/; };	//!< Util for PBOs
@@ -264,9 +304,9 @@ private:
 	int		m_init_resizing;
 
 	//accumulation
-	unsigned int g_iCounter;		// iteration counter
-	unsigned int g_minIterations;	// for 'paused' mode, to get a bit of refinement
-	bool g_resetAccumulation;		// clear accumulation
+	unsigned int g_iCounter;			// iteration counter
+	unsigned int g_minIterations;		// for 'paused' mode, to get a bit of refinement
+	bool g_resetAccumulation;			// clear accumulation
 
 	// render verbosity
 	int g_iVerbose;
@@ -284,6 +324,9 @@ private:
 
 	// framebuffer controls
 	OverlayItemsController * m_framebuffer_ctrl;
+
+	// Undo/Redo stack
+	QUndoStack *m_glUndoStack;
 };
 
 

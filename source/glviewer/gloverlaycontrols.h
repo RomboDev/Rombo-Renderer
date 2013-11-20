@@ -477,6 +477,16 @@ public:
 	void setHasNoSlider (bool ihasslider=false) { m_has_slider = ihasslider; }
 	void setHasNoNumPad (bool ishowpad=false) { m_show_numpad = ishowpad; }
 
+public slots:
+	void setData (int id, int idata)
+	{
+		if(getID()!=id) return;
+		std::cout << "OverlaySliderItem->UndoRedo slot called, id: " << id << " , data: " << idata << std::endl;
+		m_force_repaint=true;
+		m_data = idata;
+		if(m_num_pad) updatePadData (idata);
+	}
+
 protected:
 
     virtual void resetHPosition (int hpos)
@@ -697,13 +707,16 @@ public:
     OverlayItemsController (GLViewer *widget, OverlayItemsBuilder * iBuilder);
     ~OverlayItemsController();
 
-    inline bool isEnabled () const { return m_is_enabled; }
-    inline bool isPainting () const { return m_is_painting; }
+    bool isEnabled () const { return m_is_enabled; }
+    bool isPainting () const { return m_is_painting; }
 
-    inline QVector<OverlayItem*> * getItems () { return &m_ctrls; }
-    inline QVector<OverlayItem*> * getSubitems () const { return m_host_ctrls; }
-    inline OverlayItem* getItem (int iID) { return m_ctrls[iID]; }
-    inline OverlayItem* getSubitem (int iID) const { return (*m_host_ctrls)[iID]; }
+    void setActiveDevice (int iDev) { m_active_device = iDev; }
+    int getActiveDevice () const { return m_active_device; }
+
+    QVector<OverlayItem*> * getItems () { return &m_ctrls; }
+    QVector<OverlayItem*> * getSubitems () const { return m_host_ctrls; }
+    OverlayItem* getItem (int iID) { return m_ctrls[iID]; }
+    OverlayItem* getSubitem (int iID) const { return (*m_host_ctrls)[iID]; }
 
     void setBckPixmaps (const QString & iBck) { m_qpixmap = new QPixmap (iBck); }
 
@@ -716,7 +729,7 @@ public:
 
     void reset ();
 
-	inline GLViewer * getParentWidget () const{ return m_widget; }
+	GLViewer * getParentWidget () const{ return m_widget; }
 
     void paint (QPainter* iPainter);
 
@@ -724,6 +737,7 @@ signals:
 	void anim_ended (int, int);
 	void items_ready ();
 	void resized ();
+	void undo_redo_items (int id, int idata);
 
 protected:
 
@@ -763,6 +777,7 @@ protected:
 
 private slots:
     void anim_ctrl();
+    void undoredo_called(int id, int slot, int idata);
 
 	virtual void viewerInit () {};
     //virtual void viewerResized (int iwidth, int iheight);
@@ -792,6 +807,8 @@ private:
     int m_items_startpos;
 
     bool m_hasno_subitems;
+
+    int m_active_device;
 
     QPixmap * m_qpixmap;
     QRect m_qpix_rect;

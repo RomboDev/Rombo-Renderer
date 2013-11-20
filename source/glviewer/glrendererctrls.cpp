@@ -17,6 +17,8 @@ bool OverlayRenderSettingsBuilder::buildItems ( OverlayItemsController * const& 
 												QVector<OverlayItem*> * const& iSubitems,
 												int iPos )
 {
+	iFactory->setActiveDevice(1);
+
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
 	OverlaySliderItem * tmItem = new OverlaySliderItem (iFactory, 0);
@@ -50,6 +52,8 @@ void OverlayRendererSettingsItem::bind_subitems (int iID)
 	{
 		connect (	getSubitem(i), 	SIGNAL 	( dataChanged (int,int, int)),
 					this, 			SLOT 	( valueChanged_slot (int,int, int)) );
+		connect(	this, 		 	SIGNAL 	( undoredo_slot (int,int)),
+					getSubitem(i), 	SLOT 	( setData (int,int)));
 	}
 }
 
@@ -61,17 +65,30 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 	switch (id)
 	{
 	case 0:	//MaxDepth GLViewer
-		if(tViewer->getRendererMaxDepth() != data )
-		tViewer->setRendererMaxDepth (data);
+		if(tViewer->getRendererMaxDepth() != data ){
+			//tViewer->setRendererMaxDepth (data);
+
+			std::cout << "PUSHdepth!" << std::endl;
+			QUndoCommand *rCommand = new GLViewer::glRendererCommand (0, data, tViewer);
+			tViewer->getStack()->push (rCommand);
+		}
 		break;
 	case 1:	//SPP
-		if(tViewer->getRendererSPP() != data )
-		tViewer->setRendererSPP (data);
+		if(tViewer->getRendererSPP() != data ){
+			//tViewer->setRendererSPP (data);
+			std::cout << "PUSHspp!" << std::endl;
+			QUndoCommand *rCommand = new GLViewer::glRendererCommand (1, data, tViewer);
+			tViewer->getStack()->push (rCommand);
+		}
 		break;
 	case 2:	//MinContribution
 		float rdata = data / pow(10,decdigits);
-		if(tViewer->getRendererMinContribution() != rdata )
-		tViewer->setRendererMinContribution (rdata);
+		if(tViewer->getRendererMinContribution() != rdata ){
+			//tViewer->setRendererMinContribution (rdata);
+			std::cout << "PUSHminc!" << std::endl;
+			QUndoCommand *rCommand = new GLViewer::glRendererCommand (2, rdata, tViewer);
+			tViewer->getStack()->push (rCommand);
+		}
 		break;
 	}
 }
@@ -84,6 +101,8 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 												QVector<OverlayItem*> * const& iSubitems,
 												int iPos )
 {
+	iFactory->setActiveDevice(2);
+
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
 	// center focus buttons
@@ -479,9 +498,11 @@ void OverlayCameraSettingsItem::valueChanged_slot (int data, int decdigits, int 
 
 // subitems builder
 bool OverlayTonemapperSettingsBuilder::buildItems ( OverlayItemsController * const& iFactory,
-												QVector<OverlayItem*> * const& iSubitems,
-												int iPos )
+													QVector<OverlayItem*> * const& iSubitems,
+													int iPos )
 {
+	iFactory->setActiveDevice(3);
+
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
 	OverlaySliderItem * amItem = new OverlaySliderItem (iFactory, 0);
@@ -579,10 +600,12 @@ void OverlayTonemapperSettingsItem::valueChanged_slot (int data, int decdigits, 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Main render controller item builder ////////////////////////////////////////////////////////////////////////
-bool OverlayRendererCtrlsBuilder::buildItems (OverlayItemsController * const& iFactory,
-											QVector<OverlayItem*> * const& iItems,
-											int iPos )
+bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& iFactory,
+												QVector<OverlayItem*> * const& iItems,
+												int iPos )
 {
+	iFactory->setActiveDevice(0);
+
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
 

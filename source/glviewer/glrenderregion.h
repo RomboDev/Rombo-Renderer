@@ -13,7 +13,6 @@
 #define RENDERREGION_H_
 
 
-//#include <QtGui>
 #include <QApplication>
 
 #include "../glviewer.h"

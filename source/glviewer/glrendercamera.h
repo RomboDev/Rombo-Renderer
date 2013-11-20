@@ -17,7 +17,6 @@ class RenderCamera : public IGLViewerDevice
 {
 	Q_OBJECT
 public:
-	RenderCamera (){};
 	RenderCamera (GLViewer * widget);
     ~RenderCamera() { m_widget=NULL; }
 

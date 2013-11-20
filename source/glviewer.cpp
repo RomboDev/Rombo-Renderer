@@ -7,6 +7,46 @@
 
 #include "glviewer.h"
 
+
+void GLViewer::glRendererCommand::undo()
+{
+	 switch(lastCommand)
+	 {
+	 case 0:
+		 glViewer->setRendererMaxDepth (lastData.toInt());
+		 break;
+	 case 1:
+		 glViewer->setRendererSPP (lastData.toInt());
+		 break;
+	 case 2:
+		 glViewer->setRendererMinContribution (lastData.toFloat());
+		 break;
+	 }
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
+		 glViewer->emit undo_redo (1, lastCommand, lastData.toInt());
+	 }
+}
+
+void GLViewer::glRendererCommand::redo()
+{
+	 switch(lastCommand)
+	 {
+	 case 0:
+		 glViewer->setRendererMaxDepth (newData.toInt());
+		 break;
+	 case 1:
+		 glViewer->setRendererSPP (newData.toInt());
+		 break;
+	 case 2:
+		 glViewer->setRendererMinContribution (newData.toFloat());
+		 break;
+	 }
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
+		 glViewer->emit undo_redo (1, lastCommand, newData.toInt());
+	 }
+}
+
+
 GLViewer::GLViewer(int argc, char *argv[]) :
 g_renderState(RSTOPPED)				//!< Start stopped
 
@@ -25,21 +65,29 @@ g_renderState(RSTOPPED)				//!< Start stopped
 
 , m_fb_mode(0)
 
+, m_fbo(NULL)
+, m_rr_pbo_available(false)
+, m_rr_pbo_active(0)
+
 , m_init_resizing(0)
 
 , m_device_is_painting(false)
 
 , g_iCounter(0)
 , g_minIterations(0)
-, g_renderregion(false)
+, g_resetAccumulation(false)
 , g_iVerbose(1)
+, g_renderregion(false)
 , m_rregion_delayed(false)
 
 , m_rcamera(NULL)
 , m_rregion(NULL)
 , m_renderer_ctrl(NULL)
 , m_framebuffer_ctrl(NULL)
+
+, m_glUndoStack(NULL)
 {
+	m_glUndoStack =  new QUndoStack(this);
 
 	setFocusPolicy(Qt::StrongFocus); //set initial focus here
 	setMouseTracking(true);
@@ -56,6 +104,7 @@ g_renderState(RSTOPPED)				//!< Start stopped
 
 GLViewer::~GLViewer() {
 	//rrDevice is being deleted in flushScene()
+	delete m_glUndoStack;
 
 	delete m_rcamera;
 	delete m_rregion;
@@ -91,17 +140,20 @@ void GLViewer::parseSceneAndRender(const std::string& iPath)
 
 		m_fb_mode = SCENESIZE;
 
-		//!viewer devices
+		//! viewer devices
 		m_rcamera = new RenderCamera(this);
 		m_rregion = new RenderRegion(this);
 
-		//renderer overlay settings ctrls
+		//! renderer overlay settings ctrls
 		m_renderer_ctrl = new OverlayRendererCtrls(this);
 		m_renderer_ctrl->setLayout(OverlayItemsController::BOTTOMLEFT);
 		m_renderer_ctrl->setBckPixmaps(
 				"./images/gloverlay/main_settings_in.png");
+		connect (	this, 				SIGNAL 	(undo_redo			(int, int, int)),
+					m_renderer_ctrl, 	SLOT 	(undoredo_called	(int, int, int)) );
 
-		//framebuffer overlay settings ctrls
+
+		//! framebuffer overlay settings ctrls
 		m_framebuffer_ctrl = new OverlayFramebufferCtrls(this);
 		m_framebuffer_ctrl->setItemsHasNoSubItems();
 		m_framebuffer_ctrl->setLayout(OverlayItemsController::TOPLEFT);
@@ -247,6 +299,13 @@ void GLViewer::keyPressEvent(QKeyEvent* e) {
 
 		this->setRendererMaxDepth(mdepth);
 		this->resetAccumulation();
+	}
+	// TEST /////////////////////////
+	else if (e->key() == Qt::Key_K) {
+		m_glUndoStack->undo();
+	}
+	else if (e->key() == Qt::Key_J) {
+		m_glUndoStack->redo();
 	}
 }
 
