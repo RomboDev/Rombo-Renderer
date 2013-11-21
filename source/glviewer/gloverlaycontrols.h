@@ -21,9 +21,28 @@ class GLViewer;
 class OverlayItem;
 class OverlayItemsController;
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Items type enumerator
+class OverlayItemTypeEnum
+{
+public:
+    enum ITEMTYPE
+    {
+    	SIMPLETYPE = 0,
+    	ANIMTYPE,
+    	SUBANIMTYPE,
+    	SLIDERTYPE,
+    	PADTYPE,
+    	PADDIGITTYPE,
+    	GROUPTYPE,
+    	BUTTONTYPE,
+    	BOOLTYPE,
+    	NAVTYPE
+    };
+};
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Interface to [sub]items custom builders
+// Interface to sub]items custom builders
 class OverlayItemsBuilder: public QObject
 {
 	Q_OBJECT
@@ -41,12 +60,17 @@ class OverlayItem : public QObject
     friend OverlayItemsController;
 
 public:
-    OverlayItem (OverlayItemsController * iFactory, int iID);
-    OverlayItem(): m_factory(NULL), m_qpix_bck(NULL), m_qpix_over(NULL), m_qpix_icon (NULL) {}
+    OverlayItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::SIMPLETYPE);
+    OverlayItem(): m_factory(NULL), m_qpix_bck(NULL), m_qpix_over(NULL), m_qpix_icon (NULL)
+    ,m_id(-1), m_type(-1), m_opacity(1.0), m_end_opacity(1.0), m_single_pixmap(false)
+    ,m_is_active(false), m_is_dimmed(false), m_is_hidden(false), m_is_over(false) {}
     ~OverlayItem();
 
     void setID (int id) { m_id = id; }
     int getID () const { return m_id; }
+
+    void setType (int itype) { m_type = itype; }
+    int getType () const { return m_type; }
 
     void setIsActive (bool active) { m_is_active = active; }
     bool isActive () const { return m_is_active; }
@@ -102,10 +126,13 @@ protected:
 
 private:
     int m_id;
+    int m_type;
+
     bool m_is_active;
     bool m_is_dimmed;
     int m_is_hidden; //2 is forcehidden
     bool m_is_over;
+
     qreal m_opacity;
     qreal m_end_opacity;
 
@@ -128,9 +155,9 @@ class OverlayAnimItem: public OverlayItem
     friend OverlayItemsController;
 
 public:
-    OverlayAnimItem ():m_utime (0.0f) {}
-	OverlayAnimItem (OverlayItemsController * iFactory, int iID)
-	: OverlayItem (iFactory, iID), m_utime (0.0f) {};
+    OverlayAnimItem () : m_utime (0.0f) {}
+	OverlayAnimItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::ANIMTYPE);
+	//: OverlayItem (iFactory, iID), m_utime (0.0f) {};
 
     void setPositionEnd (const QRect & iPos);
     inline const QRect& getPositionEnd () const { return m_qpix_rect_end; };
@@ -176,8 +203,7 @@ class OverlayGroupItem: public OverlayAnimItem
 {
 	Q_OBJECT
 public:
-	OverlayGroupItem (OverlayItemsController * iFactory, int iID)
-	: OverlayAnimItem (iFactory, iID) {}
+	OverlayGroupItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::GROUPTYPE);
 	~OverlayGroupItem();
 
 	void addItem (OverlayItem*item);
@@ -198,8 +224,8 @@ class OverlayAnimSubItem: public OverlayAnimItem
     friend OverlayItemsController;
 
 public:
-	OverlayAnimSubItem (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder)
-	: OverlayAnimItem (iFactory, iID), m_builder (iBuilder), m_subitems_activated (false), m_anim_toalone_done (false) {};
+	OverlayAnimSubItem (OverlayItemsController * iFactory, OverlayItemsBuilder * iBuilder, int iID, int iType=OverlayItemTypeEnum::SUBANIMTYPE)
+	: OverlayAnimItem (iFactory, iID, iType), m_builder (iBuilder), m_subitems_activated (false), m_anim_toalone_done (false) {};
 	~OverlayAnimSubItem();
 
     void setPositionAlone (const QRect & iTarget) { m_qpix_rect_alone = iTarget; }
@@ -247,19 +273,21 @@ private:
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //OverlayNumericPadDigit
+class OverlaySliderItem;
+class OverlayNumericPad;
 class OverlayNumericPadDigit: public OverlayItem
 {
+	friend OverlayNumericPad;
 	Q_OBJECT
+public:
+	OverlayNumericPadDigit (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::PADDIGITTYPE)
+	: OverlayItem (iFactory, iID, iType), m_digit (-1), m_qpix_custom (NULL) {}
+	~OverlayNumericPadDigit () { if(m_qpix_custom!=NULL) delete m_qpix_custom; }
 
 signals:
 	void digit_pressed (QChar);
 
-public:
-	OverlayNumericPadDigit (OverlayItemsController * iFactory, int iID)
-	: OverlayItem (iFactory, iID),
-	  m_digit (-1), m_qpix_custom (NULL) {}
-	~OverlayNumericPadDigit () { if(m_qpix_custom!=NULL) delete m_qpix_custom; }
-
+protected:
 	void setDigit (QChar idig) { m_digit = idig; }
 	QChar getDigit () const { return m_digit; }
 
@@ -274,33 +302,22 @@ private:
     QPixmap * m_qpix_custom;
 };
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //OverlayNumericPad
-class OverlaySliderItem;
+//class OverlaySliderItem;
 class OverlayNumericPad: public OverlayItem
 {
 	friend OverlaySliderItem;
 	Q_OBJECT
+public:
+	OverlayNumericPad (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::PADTYPE);
+	~OverlayNumericPad () { destroyPad(); }
 
 signals:
 	void dataChanged (int idata);
 	void dataChanging (int idata,int idel=-1);
 
-public:
-	OverlayNumericPad (OverlayItemsController * iFactory, int iID)
-	: OverlayItem (iFactory, iID),
-	  m_dot_allowed (true),
-	  m_dot_isthere (false),
-	  m_dot_needed (false),
-	  m_sign_allowed (true),
-	  m_sign_isthere (false),
-	  m_dec_digits (0),
-	  m_cur_decdigits (0),
-	  m_cur_intdigits(0),
-	  m_data(0),
-	  m_data_changed (false),
-	  m_not_hidden (false) {}
-	~OverlayNumericPad () { destroyPad(); }
-
+protected:
 	bool isDecimal () const { return m_dot_allowed; }
 	void setIsDecimal (bool isdec) { m_dot_allowed = isdec; }
 	bool isSigned () const { return m_sign_allowed; }
@@ -431,29 +448,8 @@ private:
 class OverlaySliderItem: public OverlayAnimItem
 {
 	Q_OBJECT
-
-signals:
-	//void actionTriggered (int action);
-	//void sliderPressed ();
-	//void sliderReleased ();
-	//void sliderMoved (int value);
-	void dataChanged (int value, int decdigits, int ID);
-
 public:
-	OverlaySliderItem (OverlayItemsController * iFactory, int iID)
-	: OverlayAnimItem (iFactory, iID),
-	  m_num_pad (NULL), m_numpad_clicked (false), m_numpad_destroy (false), m_numpad_updating (false),
-	  m_numpad_decdigits (-1),
-	  m_override_cur_once (true), m_restore_cur_once (false),
-	  m_over_cursor (false), m_draggin_cursor (false),
-	  m_has_slider (true), m_show_numpad (true), m_force_repaint (false)
-	{
-		//set default bck pixmap
-		if(!m_has_slider)
-			setBckPixmaps (	"./images/gloverlay/slider_num_bck.png");
-		else
-			setBckPixmaps (	"./images/gloverlay/slider_bck.png");
-	}
+	OverlaySliderItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::SLIDERTYPE);
 	~OverlaySliderItem () { if (m_num_pad!=NULL) clearNumericPad(); }
 
 	void setData (const QString& iparamname, int idata, const QPoint& irange, int idecdigits=0)
@@ -474,15 +470,25 @@ public:
 	int getDecDigitsNb () const { return m_decdigits; }
 	bool hasNegativeRange () const { return m_vrange.x()<0; }
 
+	bool cursorIsDraggin () const { return m_draggin_cursor; }
+
 	void setHasNoSlider (bool ihasslider=false) { m_has_slider = ihasslider; }
 	void setHasNoNumPad (bool ishowpad=false) { m_show_numpad = ishowpad; }
+
+signals:
+	//void actionTriggered (int action);
+	//void sliderPressed ();
+	//void sliderReleased ();
+	//void sliderMoved (int value);
+	void dataChanged (int value, int decdigits, int ID);
 
 public slots:
 	void setData (int id, int idata)
 	{
 		if(getID()!=id) return;
-		std::cout << "OverlaySliderItem->UndoRedo slot called, id: " << id << " , data: " << idata << std::endl;
-		m_force_repaint=true;
+		//std::cout << "OverlaySliderItem->UndoRedo slot called, id: " << id << " , data: " << idata << std::endl;
+
+		m_force_repaint = true;
 		m_data = idata;
 		if(m_num_pad) updatePadData (idata);
 	}
@@ -592,18 +598,17 @@ private:
 class OverlayButtonItem: public OverlayAnimItem
 {
 	Q_OBJECT
-
-signals:
-	void button_pressed (bool isClicked, int ID);
-
 public:
-	OverlayButtonItem (OverlayItemsController * iFactory, int iID)
-	: OverlayAnimItem (iFactory, iID), m_qpix_click (NULL) {}
+	OverlayButtonItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::BUTTONTYPE)
+	: OverlayAnimItem (iFactory, iID, iType), m_qpix_click (NULL) {}
 	~OverlayButtonItem () { if(m_qpix_click!=NULL) delete m_qpix_click; }
 
     void setClickedPixmap (const QString & iclickPix) {	if(!iclickPix.isEmpty() || !iclickPix.isNull())
     														m_qpix_click = new QPixmap (iclickPix); }
     void setParamName (const QString & ipname) { m_paramname = ipname; }
+
+signals:
+	void button_pressed (bool isClicked, int ID);
 
 protected:
     virtual void paint (QPainter* iPainter);
@@ -620,18 +625,17 @@ private:
 class OverlayBoolItem: public OverlayAnimItem
 {
 	Q_OBJECT
-
-signals:
-	void button_pressed (bool isClicked, int ID);
-
 public:
-	OverlayBoolItem (OverlayItemsController * iFactory, int iID)
-	: OverlayAnimItem (iFactory, iID), m_qpix_click (NULL), m_bool_data (false) {}
+	OverlayBoolItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::BOOLTYPE)
+	: OverlayAnimItem (iFactory, iID, iType), m_qpix_click (NULL), m_bool_data (false) {}
 	~OverlayBoolItem () { if(m_qpix_click!=NULL) delete m_qpix_click; }
 
     void setClickedPixmap (const QString & iclickPix) {	if(!iclickPix.isEmpty() || !iclickPix.isNull())
     														m_qpix_click = new QPixmap (iclickPix); }
     void setData (bool idata) { m_bool_data = idata; }
+
+signals:
+	void button_pressed (bool isClicked, int ID);
 
 protected:
     virtual void paint (QPainter* iPainter);
@@ -651,8 +655,8 @@ class OverlayNavigatorItem: public OverlayAnimItem
 	Q_OBJECT
 
 public:
-	OverlayNavigatorItem (OverlayItemsController * iFactory, int iID)
-	: OverlayAnimItem (iFactory, iID),
+	OverlayNavigatorItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::NAVTYPE)
+	: OverlayAnimItem (iFactory, iID, iType),
 	  m_force_blockme (-1), m_rr_isdragging (false), m_renderer_alredy_paused (false),
 	  m_subregion (QRect(200,100,70,70)) {}
 	~OverlayNavigatorItem () {}
@@ -695,7 +699,6 @@ class OverlayItemsController : public IGLViewerDevice
     friend OverlayNavigatorItem;
 
 public:
-
     enum LAYOUTTYPE
     {
     	BOTTOMLEFT = 0,
@@ -760,7 +763,7 @@ protected:
     	TIMERONLY
     };
 
-    void setIsPainting (bool ipaint=true)
+    void setIsPainting (int ipaint=1)
     {
     	m_is_painting = ipaint;
     	emit devicePainting (ipaint);	//!< emit painting signal

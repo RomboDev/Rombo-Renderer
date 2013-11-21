@@ -41,7 +41,7 @@ public:
 
 	QUndoStack* getStack() const { return m_glUndoStack; }
 
-	void initUndoRedo (int id, int slot, int idata)	{ emit undo_redo (id, slot, idata);	}
+	void emitUndoRedo (int id, int slot, int idata)	{ emit undo_redo (id, slot, idata);	}
 	void connectDevice (OverlayItemsController* iSettingCtrl);
 
 private:
@@ -55,7 +55,7 @@ public:
 	UndoRedoBase (QObject* iWidget ) : m_undoredo (new UndoRedo (iWidget)) {}
 	~UndoRedoBase (){ delete m_undoredo; }
 
-	void initUndoRedo (int id, int slot, int idata)	{ m_undoredo->initUndoRedo (id, slot, idata); }
+	void emitUndoRedo (int id, int slot, int idata)	{ m_undoredo->emitUndoRedo (id, slot, idata); }
 
 	void undoCmd () { m_undoredo->getStack()->undo(); }
 	void redoCmd () { m_undoredo->getStack()->redo(); }
@@ -228,7 +228,7 @@ public slots:
 	void setRenderRegion(int iX0, int iY0, int iX1, int iY1);
 	void setRenderRegionSlot (int iSlot, int iState);
 
-	void deviceIsPainting (bool ispainting) { m_device_is_painting = ispainting; }
+	void deviceIsPainting (int ispainting) { m_device_is_painting = ispainting; }
 
 protected:
 	// OpenGL
@@ -307,7 +307,7 @@ private:
 	// render verbosity
 	int g_iVerbose;
 
-	bool m_device_is_painting;
+	int m_device_is_painting;
 
 	// render camera
 	RenderCamera * m_rcamera;

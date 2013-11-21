@@ -51,7 +51,7 @@ void OverlayRendererSettingsItem::bind_subitems (int iID)
 	for (int i=0; i<getSubitems()->size(); i++)
 	{
 		connect (	getSubitem(i), 	SIGNAL 	( dataChanged (int,int, int)),
-					this, 			SLOT 	( valueChanged_slot (int,int, int)) );
+					this, 			SLOT 	( valueChanged_slot (int,int, int)));
 		connect(	this, 		 	SIGNAL 	( undoredo_slot (int,int)),
 					getSubitem(i), 	SLOT 	( setData (int,int)));
 	}
@@ -62,29 +62,75 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 {
 	GLViewer * tViewer = getFactory()->getParentWidget();
 
+	std::cout << ">><<<zzZZZZZzzZZZZZZzzZZzZz !!!!!!!!!" << id << data << std::endl;
 	switch (id)
 	{
 	case 0:	//MaxDepth GLViewer
-		if(tViewer->getRendererMaxDepth() != data )
+	{
+		if(tViewer->getRendererMaxDepth() == data && !wasDraggin) break;
+
+
+		if(getSubitem(0)->getType()==OverlayItemTypeEnum::SLIDERTYPE)
 		{
-			std::cout << "PUSHdepth!" << std::endl;
+			OverlaySliderItem * sliderItem = static_cast<OverlaySliderItem*> (getSubitem(0));
+			if(sliderItem && sliderItem->cursorIsDraggin())
+			{
+				// if user is draggin the slider we do track only
+				// initial data and last data when the slider is released
+
+				if(initialData==-999) // set initial data
+					initialData = tViewer->getRendererMaxDepth();
+
+				// keep updating the render in real time
+				// without undoredo cmd so to not bloat qundostack
+				tViewer->setRendererMaxDepth (data);
+
+				wasDraggin = true;
+				break;
+			}else
+			{
+				if(wasDraggin && tViewer->getRendererMaxDepth() == data)
+				{
+					// as the undoredo cmd will save last data getting it from renderer
+					// set it here before pass the command with the new data as usual
+					tViewer->setRendererMaxDepth (initialData);
+
+					// push data to qundo stack
+					std::cout << "WAS DRAGGIN PUSH depth! " << initialData << std::endl;
+					QUndoCommand *rCommand = new OverlayRenderSettingsCommand (0, data, tViewer);
+					tViewer->pushCmd (rCommand);
+
+					// reset everything
+					initialData = -999;
+					wasDraggin = false;
+					break;
+				}
+			}
+		}
+
+		// if we're not draggin we still need to check for different data
+		// and if not, add it to the undo stack as usual
+		if(tViewer->getRendererMaxDepth() != data)
+		{
+			std::cout << "PUSH depth!" << std::endl;
 			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (0, data, tViewer);
 			tViewer->pushCmd (rCommand);
 		}
 		break;
+	}
 	case 1:	//SPP
-		if(tViewer->getRendererSPP() != data )
+		if(tViewer->getRendererSPP() != data)
 		{
-			std::cout << "PUSHspp!" << std::endl;
+			std::cout << "PUSH spp!" << std::endl;
 			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (1, data, tViewer);
 			tViewer->pushCmd (rCommand);
 		}
 		break;
 	case 2:	//MinContribution
-		float rdata = data / pow(10,decdigits);
-		if(tViewer->getRendererMinContribution() != rdata )
+		float rdata = (float)data / pow(10,decdigits);
+		if(tViewer->getRendererMinContribution() != rdata)
 		{
-			std::cout << "PUSHminc!" << std::endl;
+			std::cout << "PUSH minc! " << rdata << std::endl;
 			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (2, rdata, tViewer);
 			tViewer->pushCmd (rCommand);
 		}
@@ -93,8 +139,7 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 }
 
 // setup undo/redo commands
-// TODO:  	- when floats we need to transform them into ints for undo/redo
-// 			- check beginGroup or somethins like that to 'merge' cmds if slider is moved manually !!
+// TODO:  	- check beginGroup or somethins like that to 'merge' cmds if slider is moved manually !!
 OverlayRenderSettingsCommand::OverlayRenderSettingsCommand
 (int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent)
 : QUndoCommand(parent), lastCommand(nbCmd), newData(iData), glViewer(iViewer)
@@ -104,6 +149,7 @@ OverlayRenderSettingsCommand::OverlayRenderSettingsCommand
 	case 0:
 		lastData = glViewer->getRendererMaxDepth();
 		glViewer->setRendererMaxDepth (newData.toInt());
+		std::cout << "Storing cmd data: " << newData.toInt() << std::endl;
 		break;
 	case 1:
 		lastData = glViewer->getRendererSPP();
@@ -112,6 +158,7 @@ OverlayRenderSettingsCommand::OverlayRenderSettingsCommand
 	case 2:
 		lastData = glViewer->getRendererMinContribution();
 		glViewer->setRendererMinContribution (newData.toFloat());
+		std::cout << "Storing cmd data: " << newData.toFloat() << std::endl;
 		break;
 	}
 }
@@ -132,8 +179,18 @@ void OverlayRenderSettingsCommand::undo()
 		 glViewer->setRendererMinContribution (lastData.toFloat());
 		 break;
 	 }
-	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
-		 glViewer->initUndoRedo (1, lastCommand, lastData.toInt());
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1)
+	 {
+		 if(lastCommand<2) {
+			 glViewer->emitUndoRedo (1, lastCommand, lastData.toInt());
+			 std::cout << "Undoing data: " << lastData.toInt() << std::endl;
+		 }
+		 else
+		 {
+			int rdata = (float)lastData.toFloat() * pow(10,3);
+			std::cout << "Undoing data: " << rdata << std::endl;
+			glViewer->emitUndoRedo (1, lastCommand, rdata);
+		 }
 	 }
 }
 
@@ -152,7 +209,16 @@ void OverlayRenderSettingsCommand::redo()
 		 break;
 	 }
 	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
-		 glViewer->initUndoRedo (1, lastCommand, newData.toInt());
+		 if(lastCommand<2) {
+			 glViewer->emitUndoRedo (1, lastCommand, newData.toInt());
+			 std::cout << "Redoing data: " << newData.toInt() << std::endl;
+		 }
+		 else
+		 {
+			int rdata = (float)newData.toFloat() * pow(10,3);
+			std::cout << "Redoing data: " << newData.toFloat() << std::endl;
+			glViewer->emitUndoRedo (1, lastCommand, rdata);
+		 }
 	 }
 }
 
@@ -713,7 +779,7 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
 
 
     //!< Environment settings
-    OverlayAnimSubItem * wmItem = new OverlayAnimSubItem (iFactory, 3, NULL);
+    OverlayAnimSubItem * wmItem = new OverlayAnimSubItem (iFactory, NULL, 3);
     wmItem->setBckPixmaps (	"./images/gloverlay/bck_base.png",
 							"./images/gloverlay/bck_over.png",
 							"./images/gloverlay/environment_icon.png");

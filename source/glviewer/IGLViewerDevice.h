@@ -22,7 +22,9 @@ public:
 	};
 
 signals:
-	void devicePainting (bool ispainting);
+	void devicePainting (int ispainting); 	// 0(false), we use main widget glpaint,
+											// 1(true), we use itemctrl timer to paint ctrl items (glpaint and renderer are stopped)
+											// 2, we only stop the render and the paint is done by widget gl
 
 public slots:
 	virtual void viewerInit () = 0;

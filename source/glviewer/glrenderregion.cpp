@@ -151,6 +151,10 @@ bool RRDivider::eventFilter(QObject *object, QEvent *event)
 				//get nb pixels from right to divline
 				m_rr_divpixels =  abs(m_rregion->getBBoxRect().width()) - abs(m_rregion->getBBoxRect().right() - x);
 				if(m_rr_divpixels<0)m_rr_divpixels=0;
+
+				//! Stop renderer to compare more smoothly
+				if(me->modifiers()==(Qt::ShiftModifier))
+				m_rregion->emit devicePainting (2);
         	}
         } break;
 
@@ -158,6 +162,7 @@ bool RRDivider::eventFilter(QObject *object, QEvent *event)
         {
 			m_isMovingDivider = false;
 			m_rregion->setIsMovingDivider(false);
+			m_rregion->emit devicePainting (false);
 
         } break;
         }
@@ -1198,6 +1203,9 @@ void RenderRegion::registerDevice ()
 {
     //install event filter on host widget
 	m_widget->installEventFilter(this);
+
+	connect (this, 		SIGNAL (devicePainting(int)),
+			m_widget, 	SLOT (deviceIsPainting(int)) );
 
 	//connect (m_widget, 	SIGNAL (init()),
 	//		this, 		SLOT (viewerInit()) );

@@ -331,10 +331,10 @@ private:
 	int m_border_right;
 
 	//Pts
-	RRSlotPoints * m_slotpoints;
-	RRCornerPoints * m_cornerpoints;
-	RRMidPoints * 	m_midpoints;
-	RRDivider * m_divider;
+	RRSlotPoints * 		m_slotpoints;
+	RRCornerPoints * 	m_cornerpoints;
+	RRMidPoints * 		m_midpoints;
+	RRDivider * 		m_divider;
 
 	//host widget
 	GLViewer * m_widget;

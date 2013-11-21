@@ -28,7 +28,7 @@ RomboRenderDevice::RomboRenderDevice( int argc, char *argv[] )
 
 , g_depth (-1)
 , g_spp (1)
-, g_mincontribution (0.01f)
+, g_mincontribution (0.001f)
 
 , g_numBuffers (1)
 

@@ -21,7 +21,7 @@ class OverlayRendererSettingsItemBase: public OverlayAnimSubItem
 public:
 	OverlayRendererSettingsItemBase (	OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
 							   	   	   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
-	: OverlayAnimSubItem (iFactory, iID, iBuilder)
+	: OverlayAnimSubItem (iFactory, iBuilder, iID)
 	{
 		setPosition (iPos);
 		setPositionEnd (iEnd);
@@ -64,12 +64,17 @@ class OverlayRendererSettingsItem: public OverlayRendererSettingsItemBase
 public:
 	OverlayRendererSettingsItem (OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
 							   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
-	: OverlayRendererSettingsItemBase (iFactory, iID, iBuilder, iPos, iEnd, iTarget) {}
+	: OverlayRendererSettingsItemBase (iFactory, iID, iBuilder, iPos, iEnd, iTarget)
+	, wasDraggin(false), initialData(-999) {}
 
 private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
 	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
+
+private:
+    bool wasDraggin;
+    int initialData;
 };
 
 // render settings undo/redo

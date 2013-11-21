@@ -11,7 +11,7 @@
 //***********************************************************************************************************//
 // Overlay item *********************************************************************************************//
 //***********************************************************************************************************//
-OverlayItem::OverlayItem (OverlayItemsController * iFactory, int iID) //(QRect iStart, QRect iStop)
+OverlayItem::OverlayItem (OverlayItemsController * iFactory, int iID, int iType) //(QRect iStart, QRect iStop)
 : m_factory (iFactory)
 
 , m_qpix_bck (NULL)
@@ -20,6 +20,7 @@ OverlayItem::OverlayItem (OverlayItemsController * iFactory, int iID) //(QRect i
 , m_single_pixmap (true)
 
 , m_id (iID)
+, m_type (iType)
 , m_is_active (false)
 , m_is_dimmed (false)
 , m_is_hidden (0)
@@ -114,6 +115,9 @@ bool OverlayItem::eventFilter (QObject *object, QEvent *event)
 //***********************************************************************************************************//
 // Animated item ********************************************************************************************//
 //***********************************************************************************************************//
+OverlayAnimItem::OverlayAnimItem (OverlayItemsController * iFactory, int iID, int iType)
+: OverlayItem (iFactory, iID, iType), m_utime (0.0f) {};
+
 void OverlayAnimItem::setPositionEnd(const QRect & iPos)
 {
 	m_pix_rect_last = getPosition();
@@ -164,6 +168,9 @@ QRect OverlayAnimItem::animate (float iTimeElapsed, const QRect& iStart, const Q
 //***********************************************************************************************************//
 // Group item ***********************************************************************************************//
 //***********************************************************************************************************//
+OverlayGroupItem::OverlayGroupItem (OverlayItemsController * iFactory, int iID, int iType)
+: OverlayAnimItem (iFactory, iID, iType) {}
+
 OverlayGroupItem::~OverlayGroupItem()
 {
 	if(m_subitems.size()>0)
@@ -426,6 +433,20 @@ bool OverlayNumericPadDigit::eventFilter (QObject *object, QEvent *event)
 //***********************************************************************************************************//
 // Numeric Pad Item	*****************************************************************************************//
 //***********************************************************************************************************//
+OverlayNumericPad::OverlayNumericPad (OverlayItemsController * iFactory, int iID, int iType)
+: OverlayItem (iFactory, iID, iType),
+  m_dot_allowed (true),
+  m_dot_isthere (false),
+  m_dot_needed (false),
+  m_sign_allowed (true),
+  m_sign_isthere (false),
+  m_dec_digits (0),
+  m_cur_decdigits (0),
+  m_cur_intdigits(0),
+  m_data(0),
+  m_data_changed (false),
+  m_not_hidden (false) {}
+
 void OverlayNumericPad::buildPad ()
 {
 	qreal iOpacity = 0.8;
@@ -781,6 +802,22 @@ void OverlayNumericPad::append_digit (QChar idig)
 //***********************************************************************************************************//
 // Slider Item	*********************************************************************************************//
 //***********************************************************************************************************//
+OverlaySliderItem::OverlaySliderItem (OverlayItemsController * iFactory, int iID, int iType)
+: OverlayAnimItem (iFactory, iID, iType),
+  m_num_pad (NULL), m_numpad_clicked (false), m_numpad_destroy (false), m_numpad_updating (false),
+  m_numpad_decdigits (-1),
+  m_override_cur_once (true), m_restore_cur_once (false),
+  m_over_cursor (false), m_draggin_cursor (false),
+  m_has_slider (true), m_show_numpad (true), m_force_repaint (false),
+  m_data(0), m_dec_inv_pow (1), m_decdigits (0)
+{
+	//set default bck pixmap
+	if(!m_has_slider)
+		setBckPixmaps (	"./images/gloverlay/slider_num_bck.png");
+	else
+		setBckPixmaps (	"./images/gloverlay/slider_bck.png");
+}
+
 int OverlaySliderItem::getXSliderFromValue (int val, bool toInt)
 {
 	int value;
@@ -1152,7 +1189,7 @@ bool OverlaySliderItem::eventFilter (QObject *object, QEvent *event)
 
 
 	        		emit dataChanged (m_data, m_decdigits, getID()); 	//!< emit data changes
-	        		updatePadData(m_data);								//update numpad if there
+	        		updatePadData (m_data);								//update numpad if there
 	        		return true; //!< stop event propagation
 				}
 
@@ -1224,7 +1261,13 @@ bool OverlaySliderItem::eventFilter (QObject *object, QEvent *event)
 
         case QEvent::MouseButtonRelease:
         {
-        	m_draggin_cursor = false;
+        	if(m_draggin_cursor)
+        	{
+				std::cout << "!!! MOUSE BUTTON RELEASED !!!" << std::endl;
+
+				m_draggin_cursor = false;
+				emit dataChanged (m_data, m_decdigits, getID()); 	//!< emit data changes TEMP!!!!!!!!!!!!!!!!!!!!!
+        	}
         } break;
         }
     }
@@ -1347,7 +1390,6 @@ bool OverlayBoolItem::eventFilter (QObject *object, QEvent *event)
 }
 
 
-
 //***********************************************************************************************************//
 // Navigator item	*****************************************************************************************//
 //***********************************************************************************************************//
@@ -1406,6 +1448,7 @@ void OverlayNavigatorItem::factoryResized ()
 	m_subregion.moveCenter (qRect.center());
 };
 */
+
 qreal OverlayNavigatorItem::remapBoxWidth (const QSizeF& isize, int hfix)
 {
 	//this shoundn't be ever true
@@ -1697,8 +1740,8 @@ void OverlayItemsController::registerDevice ()
 {
 	m_widget->installEventFilter(this);
 
-	connect (this, 		SIGNAL (devicePainting(bool)),
-			m_widget, 	SLOT (deviceIsPainting(bool)) );
+	connect (this, 		SIGNAL (devicePainting(int)),
+			m_widget, 	SLOT (deviceIsPainting(int)) );
 
 	//connect (m_widget, 	SIGNAL (init()),
 	//		this, 		SLOT (viewerInit()) );
@@ -2025,7 +2068,7 @@ void OverlayItemsController::anim_ctrl()
 void OverlayItemsController::viewerUndoRedo(int id, int slot, int idata)
 {
 	if(!m_is_enabled || getActiveDevice()!=id) return;
-	std::cout << "OverlayCtrl->UndoRedo slot called, id: " << id << " , slot: " << slot << " , data: " << idata << std::endl;
+	//std::cout << "OverlayCtrl->UndoRedo slot called, id: " << id << " , slot: " << slot << " , data: " << idata << std::endl;
 
 	emit undo_redo_items (slot, idata); //! emit signal to broadcast undo/redo changes to active setting gl devices
 }

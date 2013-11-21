@@ -955,7 +955,7 @@ void GLViewer::paintGL()
 	rrDevice->unmapFramebufferPtr();
 
 	//update, actually engaging both cpu render and gl render loops
-	if (!m_device_is_painting) //otherwise ctrled by the devices
+	if (m_device_is_painting!=1) //otherwise ctrled by the devices
 		update();
 
 	restoreGLState();	//!< restore GL state for QPainter //////////////////
