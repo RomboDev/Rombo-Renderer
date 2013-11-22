@@ -27,6 +27,7 @@ OverlayItem::OverlayItem (OverlayItemsController * iFactory, int iID, int iType)
 , m_is_over (false)
 , m_opacity (1.0)
 , m_end_opacity (1.0)
+, m_hasdata (false)
 {}
 OverlayItem::~OverlayItem()
 {
@@ -802,14 +803,14 @@ void OverlayNumericPad::append_digit (QChar idig)
 //***********************************************************************************************************//
 // Slider Item	*********************************************************************************************//
 //***********************************************************************************************************//
-OverlaySliderItem::OverlaySliderItem (OverlayItemsController * iFactory, int iID, int iType)
+OverlaySliderItem::OverlaySliderItem (OverlayItemsController * iFactory, int iID, OverlayItemDataBinder* iDatabinder, int iType)
 : OverlayAnimItem (iFactory, iID, iType),
   m_num_pad (NULL), m_numpad_clicked (false), m_numpad_destroy (false), m_numpad_updating (false),
   m_numpad_decdigits (-1),
   m_override_cur_once (true), m_restore_cur_once (false),
   m_over_cursor (false), m_draggin_cursor (false),
   m_has_slider (true), m_show_numpad (true), m_force_repaint (false),
-  m_data(0), m_dec_inv_pow (1), m_decdigits (0)
+  m_databinder(iDatabinder), m_data(0), m_decdigits (0), m_vrange(QPoint(0,0)), m_dec_inv_pow (1)
 {
 	//set default bck pixmap
 	if(!m_has_slider)
@@ -1685,11 +1686,12 @@ bool OverlayNavigatorItem::eventFilter (QObject *object, QEvent *event)
 //***********************************************************************************************************//
 // Controller factory	*************************************************************************************//
 //***********************************************************************************************************//
-OverlayItemsController::OverlayItemsController (GLViewer *widget, OverlayItemsBuilder * iBuilder)
-: m_widget (widget)
+OverlayItemsController::OverlayItemsController (int iID, GLViewer *widget, OverlayItemsBuilder * iBuilder)
+: m_id (iID)
+, m_widget (widget)
 , m_builder (iBuilder)
-, m_host_ctrls (NULL)
 
+, m_host_ctrls (NULL)
 , m_qpixmap (NULL)
 , m_timer (NULL)
 
@@ -2065,7 +2067,7 @@ void OverlayItemsController::anim_ctrl()
 	m_widget->update(); 							//!< refresh widget manually
 }
 
-void OverlayItemsController::viewerUndoRedo(int id, int slot, int idata)
+void OverlayItemsController::viewerUndoRedo(int id, int slot, QVariant idata)
 {
 	if(!m_is_enabled || getActiveDevice()!=id) return;
 	//std::cout << "OverlayCtrl->UndoRedo slot called, id: " << id << " , slot: " << slot << " , data: " << idata << std::endl;
@@ -2114,8 +2116,8 @@ bool OverlayItemsController::eventFilter (QObject *object, QEvent *event)
 							for (int i=0; i<m_ctrls.size(); i++){
 							connect(this, 		 SIGNAL (anim_ended(int,int)),
 									m_ctrls [i], SLOT 	(anim_has_ended(int,int)));
-							connect(this, 		 SIGNAL (undo_redo_items(int,int)),
-									m_ctrls [i], SLOT 	(undoredo_called(int,int)));
+							connect(this, 		 SIGNAL (undo_redo_items(int,QVariant)),
+									m_ctrls [i], SLOT 	(undoredo_called(int,QVariant)));
 							}
 							emit items_ready ();
 						}

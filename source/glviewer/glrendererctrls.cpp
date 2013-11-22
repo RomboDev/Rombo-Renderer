@@ -11,24 +11,42 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Renderer settings //////////////////////////////////////////////////////////////////////////////////////////
+QVariant OverlayRenderSettingsDataBinder_maxDepth::getBindedStuff ( OverlayItemsController * const& iFactory )
+{
+	return iFactory->getParentWidget()->getRendererMaxDepth ();
+}
+void OverlayRenderSettingsDataBinder_maxDepth::setBindedStuff ( OverlayItemsController * const& iFactory, QVariant idata )
+{
+	iFactory->getParentWidget()->setRendererMaxDepth (idata.toInt());
+}
+
+QVariant OverlayRenderSettingsDataBinder_spp::getBindedStuff ( OverlayItemsController * const& iFactory )
+{
+	return iFactory->getParentWidget()->getRendererSPP ();
+}
+void OverlayRenderSettingsDataBinder_spp::setBindedStuff ( OverlayItemsController * const& iFactory, QVariant idata )
+{
+	iFactory->getParentWidget()->setRendererSPP (idata.toInt());
+}
+
 
 // subitems builder
 bool OverlayRenderSettingsBuilder::buildItems ( OverlayItemsController * const& iFactory,
 												QVector<OverlayItem*> * const& iSubitems,
 												int iPos )
 {
-	iFactory->setActiveDevice(1);
+	iFactory->setActiveDevice (OverlayItemsController::RENDERSETTINGS);
 
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
-	OverlaySliderItem * tmItem = new OverlaySliderItem (iFactory, 0);
+	OverlaySliderItem * tmItem = new OverlaySliderItem (iFactory, 0, new OverlayRenderSettingsDataBinder_maxDepth());
 	tmItem->setData ("Max Depth", iFactory->getParentWidget()->getRendererMaxDepth(), QPoint(1,32));
 	tmItem->setPosition (QRect (iPos+82, h, 170, 70));
 	tmItem->setPositionEnd (QRect (iPos +82, h, 170, 70) );
 	tmItem->setOpacity (0.0f);
 	iSubitems->push_back (tmItem);
 
-	OverlaySliderItem * xmItem = new OverlaySliderItem (iFactory, 1);
+	OverlaySliderItem * xmItem = new OverlaySliderItem (iFactory, 1, new OverlayRenderSettingsDataBinder_spp);
 	xmItem->setData ("Samples Per Pixel", iFactory->getParentWidget()->getRendererSPP(), QPoint(1,8));
 	xmItem->setPosition (QRect (iPos+82, h, 170, 70));
 	xmItem->setPositionEnd (QRect (iPos +82+172, h, 170, 70) );
@@ -52,8 +70,8 @@ void OverlayRendererSettingsItem::bind_subitems (int iID)
 	{
 		connect (	getSubitem(i), 	SIGNAL 	( dataChanged (int,int, int)),
 					this, 			SLOT 	( valueChanged_slot (int,int, int)));
-		connect(	this, 		 	SIGNAL 	( undoredo_slot (int,int)),
-					getSubitem(i), 	SLOT 	( setData (int,int)));
+		connect(	this, 		 	SIGNAL 	( undoredo_slot (int,QVariant)),
+					getSubitem(i), 	SLOT 	( setData (int,QVariant)));
 	}
 }
 
@@ -62,41 +80,49 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 {
 	GLViewer * tViewer = getFactory()->getParentWidget();
 
-	std::cout << ">><<<zzZZZZZzzZZZZZZzzZZzZz !!!!!!!!!" << id << data << std::endl;
+	std::cout << "Getting data from item signal !!" << id << data << std::endl;
 	switch (id)
 	{
 	case 0:	//MaxDepth GLViewer
+	case 1:	//SPP
 	{
-		if(tViewer->getRendererMaxDepth() == data && !wasDraggin) break;
+		OverlayItem * mItem = getSubitem (id);
+		QVariant rData = mItem->getReferenceData();
+		bool dataIsTheSame = rData.toInt() == data; //toInt is temp, maybe wrap QVariant into a class that
+													//get us back the int into float notation ? ie. applies
+													//internally the -> float rdata = (float)data / pow(10,decdigits);
 
+		if(dataIsTheSame && !wasDraggin) break;
 
-		if(getSubitem(0)->getType()==OverlayItemTypeEnum::SLIDERTYPE)
+		if(getSubitem(id)->getType()==OverlayItemTypeEnum::SLIDERTYPE)
 		{
-			OverlaySliderItem * sliderItem = static_cast<OverlaySliderItem*> (getSubitem(0));
+			OverlaySliderItem * sliderItem = static_cast<OverlaySliderItem*> (mItem);
 			if(sliderItem && sliderItem->cursorIsDraggin())
 			{
 				// if user is draggin the slider we do track only
 				// initial data and last data when the slider is released
 
 				if(initialData==-999) // set initial data
-					initialData = tViewer->getRendererMaxDepth();
+					initialData = rData;
 
 				// keep updating the render in real time
-				// without undoredo cmd so to not bloat qundostack
-				tViewer->setRendererMaxDepth (data);
+				// without engagin undoredo cmds so to not bloat qundostack
+				mItem->setReferenceData (data);
+				//tViewer->setRendererMaxDepth (data);
 
 				wasDraggin = true;
 				break;
 			}else
 			{
-				if(wasDraggin && tViewer->getRendererMaxDepth() == data)
+				if(wasDraggin && dataIsTheSame)
 				{
 					// as the undoredo cmd will save last data getting it from renderer
 					// set it here before pass the command with the new data as usual
-					tViewer->setRendererMaxDepth (initialData);
+					//tViewer->setRendererMaxDepth (initialData);
+					mItem->setReferenceData (initialData);
 
 					// push data to qundo stack
-					std::cout << "WAS DRAGGIN PUSH depth! " << initialData << std::endl;
+					std::cout << "WAS DRAGGIN PUSH depth! " << initialData.toInt() << std::endl;
 					QUndoCommand *rCommand = new OverlayRenderSettingsCommand (0, data, tViewer);
 					tViewer->pushCmd (rCommand);
 
@@ -110,22 +136,22 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 
 		// if we're not draggin we still need to check for different data
 		// and if not, add it to the undo stack as usual
-		if(tViewer->getRendererMaxDepth() != data)
+		if(!dataIsTheSame)
 		{
 			std::cout << "PUSH depth!" << std::endl;
-			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (0, data, tViewer);
+			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (id, data, tViewer);
 			tViewer->pushCmd (rCommand);
 		}
 		break;
 	}
-	case 1:	//SPP
+	/*case 1:	//SPP
 		if(tViewer->getRendererSPP() != data)
 		{
 			std::cout << "PUSH spp!" << std::endl;
 			QUndoCommand *rCommand = new OverlayRenderSettingsCommand (1, data, tViewer);
 			tViewer->pushCmd (rCommand);
 		}
-		break;
+		break;*/
 	case 2:	//MinContribution
 		float rdata = (float)data / pow(10,decdigits);
 		if(tViewer->getRendererMinContribution() != rdata)
@@ -141,20 +167,28 @@ void OverlayRendererSettingsItem::valueChanged_slot (int data, int decdigits, in
 // setup undo/redo commands
 // TODO:  	- check beginGroup or somethins like that to 'merge' cmds if slider is moved manually !!
 OverlayRenderSettingsCommand::OverlayRenderSettingsCommand
-(int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent)
-: QUndoCommand(parent), lastCommand(nbCmd), newData(iData), glViewer(iViewer)
+(int iID, QVariant iData, GLViewer *iViewer, QUndoCommand *parent)
+: QUndoCommand(parent), lastID(iID), newData(iData), glViewer(iViewer)
 {
-	switch(nbCmd)
+	switch(iID)
 	{
 	case 0:
-		lastData = glViewer->getRendererMaxDepth();
-		glViewer->setRendererMaxDepth (newData.toInt());
+	case 1:
+	{
+		OverlayItem * mItem = glViewer->getRendererSettingGlDevice()->getSubitem(iID);
+
+		lastData = mItem->getReferenceData();
+		mItem->setReferenceData(newData);
+
+		//lastData = glViewer->getRendererMaxDepth();
+		//glViewer->setRendererMaxDepth (newData.toInt());
 		std::cout << "Storing cmd data: " << newData.toInt() << std::endl;
 		break;
-	case 1:
+	}
+	/*case 1:
 		lastData = glViewer->getRendererSPP();
 		glViewer->setRendererSPP (newData.toInt());
-		break;
+		break;*/
 	case 2:
 		lastData = glViewer->getRendererMinContribution();
 		glViewer->setRendererMinContribution (newData.toFloat());
@@ -167,58 +201,51 @@ OverlayRenderSettingsCommand::~OverlayRenderSettingsCommand() { glViewer=NULL; }
 
 void OverlayRenderSettingsCommand::undo()
 {
-	 switch(lastCommand)
+	 switch(lastID)
 	 {
 	 case 0:
-		 glViewer->setRendererMaxDepth (lastData.toInt());
-		 break;
 	 case 1:
-		 glViewer->setRendererSPP (lastData.toInt());
+		 //glViewer->setRendererMaxDepth (lastData.toInt());
+		 glViewer->getRendererSettingGlDevice()->getSubitem(lastID)->setReferenceData(lastData);
 		 break;
+	//case 1:
+	//	 glViewer->setRendererSPP (lastData.toInt());
+	//	 break;
 	 case 2:
 		 glViewer->setRendererMinContribution (lastData.toFloat());
 		 break;
 	 }
-	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1)
+
+	 // update visual item
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==OverlayItemsController::RENDERSETTINGS)
 	 {
-		 if(lastCommand<2) {
-			 glViewer->emitUndoRedo (1, lastCommand, lastData.toInt());
-			 std::cout << "Undoing data: " << lastData.toInt() << std::endl;
-		 }
-		 else
-		 {
-			int rdata = (float)lastData.toFloat() * pow(10,3);
-			std::cout << "Undoing data: " << rdata << std::endl;
-			glViewer->emitUndoRedo (1, lastCommand, rdata);
-		 }
+		 glViewer->emitUndoRedo (1, lastID, lastData);
+		 std::cout << "Undoing data: " << lastData.toInt() << std::endl;
 	 }
 }
 
 void OverlayRenderSettingsCommand::redo()
 {
-	 switch(lastCommand)
+	 switch(lastID)
 	 {
 	 case 0:
-		 glViewer->setRendererMaxDepth (newData.toInt());
-		 break;
 	 case 1:
-		 glViewer->setRendererSPP (newData.toInt());
+		 //glViewer->setRendererMaxDepth (newData.toInt());
+		 glViewer->getRendererSettingGlDevice()->getSubitem(lastID)->setReferenceData(newData);
 		 break;
+	//case 1:
+	//	 glViewer->setRendererSPP (newData.toInt());
+	//	 break;
 	 case 2:
 		 glViewer->setRendererMinContribution (newData.toFloat());
 		 break;
 	 }
-	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==1) {
-		 if(lastCommand<2) {
-			 glViewer->emitUndoRedo (1, lastCommand, newData.toInt());
-			 std::cout << "Redoing data: " << newData.toInt() << std::endl;
-		 }
-		 else
-		 {
-			int rdata = (float)newData.toFloat() * pow(10,3);
-			std::cout << "Redoing data: " << newData.toFloat() << std::endl;
-			glViewer->emitUndoRedo (1, lastCommand, rdata);
-		 }
+
+	 // update visual item
+	 if(glViewer->getRendererSettingGlDevice()->getActiveDevice()==OverlayItemsController::RENDERSETTINGS)
+	 {
+		 glViewer->emitUndoRedo (1, lastID, newData);
+		 std::cout << "Redoing data: " << newData.toInt() << std::endl;
 	 }
 }
 
@@ -231,7 +258,7 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 												QVector<OverlayItem*> * const& iSubitems,
 												int iPos )
 {
-	iFactory->setActiveDevice(2);
+	iFactory->setActiveDevice (OverlayItemsController::CAMERASETTINGS);
 
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
@@ -631,7 +658,7 @@ bool OverlayTonemapperSettingsBuilder::buildItems ( OverlayItemsController * con
 													QVector<OverlayItem*> * const& iSubitems,
 													int iPos )
 {
-	iFactory->setActiveDevice(3);
+	iFactory->setActiveDevice (OverlayItemsController::TONEMAPSETTINGS);
 
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
@@ -734,7 +761,7 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
 												QVector<OverlayItem*> * const& iItems,
 												int iPos )
 {
-	iFactory->setActiveDevice(0);
+	iFactory->setActiveDevice (OverlayItemsController::MAINCONTROLLER);
 
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
@@ -793,3 +820,18 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
 }
 
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Renderer Controller ////////////////////////////////////////////////////////////////////////////////////////
+OverlayRendererCtrls::OverlayRendererCtrls (GLViewer *iWidget)
+: OverlayItemsController(GLViewer::RENDERERSETTINGS, iWidget, new OverlayRendererCtrlsBuilder()) {}
+
+
+void OverlayRendererCtrls::slot_subitems_ready (int iID)
+{
+	std::cout << "Subitems READY: " << iID << std::endl;
+	QVector<OverlayItem*> * tt = getSubitems ();
+	OverlayItem* myItem = getSubitem (0);
+	std::cout << tt->size() << std::endl;
+	std::cout << myItem->getCurrentPos().topLeft().x() << std::endl;
+}

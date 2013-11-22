@@ -20,7 +20,7 @@ class OverlayRendererSettingsItemBase: public OverlayAnimSubItem
 
 public:
 	OverlayRendererSettingsItemBase (	OverlayItemsController * iFactory, int iID, OverlayItemsBuilder * iBuilder,
-							   	   	   const QRect & iPos, const QRect & iEnd, const QRect & iTarget)
+										const QRect & iPos, const QRect & iEnd, const QRect & iTarget )
 	: OverlayAnimSubItem (iFactory, iBuilder, iID)
 	{
 		setPosition (iPos);
@@ -28,27 +28,45 @@ public:
 		setPositionAlone (iTarget);
 
 		///////////////////////////////////////////////////////////
-		connect (	this, SIGNAL 	(subitems_ready	(int)), 		//this comes from base class (OverlayAnimSubItem)
-					this, SLOT 		(bind_subitems	(int)) );		//calling this specialized slot
+		connect (	this, SIGNAL 	(subitems_ready	(int)), 		// this comes from base class (OverlayAnimSubItem)
+					this, SLOT 		(bind_subitems	(int)) );		// calling the specialized slot in this class
 	};
 
 	~OverlayRendererSettingsItemBase ()
 	{
-		disconnect (	this, SIGNAL 	(subitems_ready	(int)),		//probably not needed
+		disconnect (	this, SIGNAL 	(subitems_ready	(int)),		// probably not needed
 						this, SLOT 		(bind_subitems	(int)) );
 	}
+
 signals:
-	void undoredo_slot (int id, int idata);
+	void undoredo_slot (int id, QVariant idata);
 
 private slots:
 	virtual void bind_subitems (int iID) =0;
 	virtual void valueChanged_slot (int data, int decdigits, int id) =0;
-	virtual void undoredo_called (int id, int idata) =0;
+	virtual void undoredo_called (int id, QVariant idata) =0;
 };
 
 
 
 // Render settings ////////////////////////////////////////////////////////////////////////////////////////////
+
+class OverlayRenderSettingsDataBinder_maxDepth: public OverlayItemDataBinder
+{
+public:
+	virtual ~OverlayRenderSettingsDataBinder_maxDepth(){}
+	virtual QVariant getBindedStuff ( OverlayItemsController * const& iFactory );
+	virtual void setBindedStuff ( OverlayItemsController * const& iFactory, QVariant idata );
+};
+
+class OverlayRenderSettingsDataBinder_spp: public OverlayItemDataBinder
+{
+public:
+	virtual ~OverlayRenderSettingsDataBinder_spp(){}
+	virtual QVariant getBindedStuff ( OverlayItemsController * const& iFactory );
+	virtual void setBindedStuff ( OverlayItemsController * const& iFactory, QVariant idata );
+};
+
 
 // render settings subitems builder
 class OverlayRenderSettingsBuilder: public OverlayItemsBuilder
@@ -70,25 +88,25 @@ public:
 private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
-	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
+	void undoredo_called (int id, QVariant idata) { emit undoredo_slot (id,idata); };
 
 private:
     bool wasDraggin;
-    int initialData;
+    QVariant initialData;
 };
 
 // render settings undo/redo
 class OverlayRenderSettingsCommand : public QUndoCommand
 {
 public:
-	OverlayRenderSettingsCommand(int nbCmd, QVariant iData, GLViewer *iViewer, QUndoCommand *parent = 0);
-	~OverlayRenderSettingsCommand();
+	OverlayRenderSettingsCommand(int iID, QVariant iData, GLViewer *iViewer, QUndoCommand *parent = 0);
+	~OverlayRenderSettingsCommand ();
 
     void undo();
     void redo();
 
 private:
-    int lastCommand;
+    int lastID;
     QVariant lastData;
     QVariant newData;
     GLViewer * glViewer;
@@ -98,14 +116,14 @@ private:
 
 // Camera settings ////////////////////////////////////////////////////////////////////////////////////////////
 
-// custom rendersettings subitems builder
+// custom camera settings subitems builder
 class OverlayCameraSettingsBuilder: public OverlayItemsBuilder
 {
 public:
 	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iSubitems, int iPos);
 };
 
-// render settings class
+// camera settings class
 class OverlayCameraSettingsItem: public OverlayRendererSettingsItemBase
 {
 	Q_OBJECT
@@ -129,7 +147,7 @@ private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
 	void button_pressed_slot (bool pressed, int id);
-	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
+	void undoredo_called (int id, QVariant idata) { emit undoredo_slot (id,idata); };
 
 private:
 	bool m_rr_active;
@@ -146,14 +164,14 @@ private:
 
 // Tonemapper settings ////////////////////////////////////////////////////////////////////////////////////////
 
-// custom rendersettings subitems builder
+// custom tonemapper settings subitems builder
 class OverlayTonemapperSettingsBuilder: public OverlayItemsBuilder
 {
 public:
 	bool buildItems (OverlayItemsController * const& iFactory, QVector<OverlayItem*> * const& iSubitems, int iPos);
 };
 
-// render settings class
+// tonemapper settings class
 class OverlayTonemapperSettingsItem: public OverlayRendererSettingsItemBase
 {
 	Q_OBJECT
@@ -166,7 +184,7 @@ private slots:
 	void bind_subitems (int iID);
 	void valueChanged_slot (int data, int decdigits, int id);
 	void button_pressed_slot (bool pressed, int id);
-	void undoredo_called (int id, int idata) { emit undoredo_slot(id,idata); };
+	void undoredo_called (int id, QVariant idata) { emit undoredo_slot (id,idata); };
 };
 
 
@@ -187,19 +205,11 @@ class OverlayRendererCtrls: public OverlayItemsController
 {
 	Q_OBJECT
 public:
-	OverlayRendererCtrls (GLViewer *iWidget)
-	: OverlayItemsController(iWidget, new OverlayRendererCtrlsBuilder()) {}
+	OverlayRendererCtrls (GLViewer *iWidget);
 
 private slots:
     void slot_items_ready () {}
-	void slot_subitems_ready (int iID)
-	{
-		std::cout << "Subitems READY: " << iID << std::endl;
-		QVector<OverlayItem*> * tt = getSubitems ();
-		OverlayItem* myItem = getSubitem (0);
-		std::cout << tt->size() << std::endl;
-		std::cout << myItem->getCurrentPos().topLeft().x() << std::endl;
-	}
+	void slot_subitems_ready (int iID);
 };
 
 #endif /* GLRENDERERCTRLS_H_ */

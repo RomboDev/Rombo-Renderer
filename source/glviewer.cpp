@@ -10,8 +10,8 @@
 
 void UndoRedo::connectDevice (OverlayItemsController* iSettingCtrl)
 {
-	connect (	this, 			SIGNAL 	(undo_redo			(int, int, int)),
-				iSettingCtrl, 	SLOT 	(viewerUndoRedo		(int, int, int)) );
+	connect (	this, 			SIGNAL 	(undo_redo			(int, int, QVariant)),
+				iSettingCtrl, 	SLOT 	(viewerUndoRedo		(int, int, QVariant)) );
 }
 
 

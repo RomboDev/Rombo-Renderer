@@ -29,20 +29,22 @@ class OverlayItemsController;
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Undo/Redo -- TO BE MOVED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 class UndoRedo : public QObject
 {
 	Q_OBJECT
-signals:
-	void undo_redo (int id, int slot, int idata);
-
 public:
 	UndoRedo (QObject* iWidget) : m_glUndoStack (new QUndoStack(iWidget)) {}
 	~UndoRedo (){ delete m_glUndoStack; }
 
 	QUndoStack* getStack() const { return m_glUndoStack; }
 
-	void emitUndoRedo (int id, int slot, int idata)	{ emit undo_redo (id, slot, idata);	}
+	void emitUndoRedo (int id, int slot, QVariant idata) { emit undo_redo (id, slot, idata); }
 	void connectDevice (OverlayItemsController* iSettingCtrl);
+
+signals:
+	void undo_redo (int id, int slot, QVariant idata);
 
 private:
 	// Undo/Redo stack
@@ -55,7 +57,7 @@ public:
 	UndoRedoBase (QObject* iWidget ) : m_undoredo (new UndoRedo (iWidget)) {}
 	~UndoRedoBase (){ delete m_undoredo; }
 
-	void emitUndoRedo (int id, int slot, int idata)	{ m_undoredo->emitUndoRedo (id, slot, idata); }
+	void emitUndoRedo (int id, int slot, QVariant idata) { m_undoredo->emitUndoRedo (id, slot, idata); }
 
 	void undoCmd () { m_undoredo->getStack()->undo(); }
 	void redoCmd () { m_undoredo->getStack()->redo(); }
@@ -80,6 +82,11 @@ public:
 	GLViewer ( int argc, char *argv[] );
 	~GLViewer ();
 
+	enum OVERLAYCONTROLLERS
+	{
+		RENDERERSETTINGS = 0,
+		FRAMEBUFFERSETTINGS
+	};
 
 	//!< Framebuffer //////////////////////////////////////////////////////////////////////////////////////////
 	int getWidgetWidth() const { return g_width; }

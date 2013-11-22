@@ -248,7 +248,7 @@ private slots:
 	virtual void viewerInit ();
 	virtual void viewerResized ();
 	virtual void viewerPaint (QPainter* iPainter) { this->paint(iPainter); }
-    virtual void viewerUndoRedo (int id, int slot, int idata) {}
+    virtual void viewerUndoRedo (int id, int slot, QVariant idata) {}
 
 private:
     void paintPts (QPainter* iPainter)

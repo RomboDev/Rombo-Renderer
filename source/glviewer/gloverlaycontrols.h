@@ -12,14 +12,12 @@
 #include <QtGui>
 QT_FORWARD_DECLARE_CLASS(QBypassWidget)
 
-
 #include "../glviewer.h"
-
-#include <iostream> //temp for debug->cout
 
 class GLViewer;
 class OverlayItem;
 class OverlayItemsController;
+
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Items type enumerator
@@ -52,6 +50,17 @@ public:
 								QVector<OverlayItem*> * const& iSettings, int iPos ) = 0;
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class OverlayItemDataBinder
+{
+public:
+	OverlayItemDataBinder(){}
+	virtual ~OverlayItemDataBinder(){}
+	virtual void setBindedStuff ( OverlayItemsController * const& iFactory, QVariant idata ) { (void)idata; };
+	virtual QVariant getBindedStuff ( OverlayItemsController * const& iFactory ) { return 0; };
+};
+
+
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Base Item
 class OverlayItem : public QObject
@@ -63,7 +72,8 @@ public:
     OverlayItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::SIMPLETYPE);
     OverlayItem(): m_factory(NULL), m_qpix_bck(NULL), m_qpix_over(NULL), m_qpix_icon (NULL)
     ,m_id(-1), m_type(-1), m_opacity(1.0), m_end_opacity(1.0), m_single_pixmap(false)
-    ,m_is_active(false), m_is_dimmed(false), m_is_hidden(false), m_is_over(false) {}
+    ,m_is_active(false), m_is_dimmed(false), m_is_hidden(false), m_is_over(false)
+    ,m_hasdata (false) {}
     ~OverlayItem();
 
     void setID (int id) { m_id = id; }
@@ -71,6 +81,9 @@ public:
 
     void setType (int itype) { m_type = itype; }
     int getType () const { return m_type; }
+
+    void setHasData (bool ihasit) { m_hasdata = ihasit; }
+    bool hasData () const { return m_hasdata; }
 
     void setIsActive (bool active) { m_is_active = active; }
     bool isActive () const { return m_is_active; }
@@ -106,6 +119,10 @@ public:
     virtual void setIsHidden (int hideme) { m_is_hidden = hideme; }
     virtual void paint (QPainter* iPainter);
 
+    virtual QVariant getReferenceData () const { return 0; }
+    virtual void setReferenceData (QVariant idata) { (void)idata; }
+    virtual OverlayItemDataBinder* getReferenceDataBinder () const { return NULL; }
+
 protected:
     virtual void reset () { m_qpix_rect_cur = m_qpix_rect_pos; setIsActive(false); }
     virtual bool eventFilter (QObject *object, QEvent *event);
@@ -132,6 +149,8 @@ private:
     bool m_is_dimmed;
     int m_is_hidden; //2 is forcehidden
     bool m_is_over;
+
+    bool m_hasdata;
 
     qreal m_opacity;
     qreal m_end_opacity;
@@ -449,8 +468,8 @@ class OverlaySliderItem: public OverlayAnimItem
 {
 	Q_OBJECT
 public:
-	OverlaySliderItem (OverlayItemsController * iFactory, int iID, int iType=OverlayItemTypeEnum::SLIDERTYPE);
-	~OverlaySliderItem () { if (m_num_pad!=NULL) clearNumericPad(); }
+	OverlaySliderItem (OverlayItemsController * iFactory, int iID, OverlayItemDataBinder* iDatabinder=NULL, int iType=OverlayItemTypeEnum::SLIDERTYPE);
+	~OverlaySliderItem () { if (m_num_pad!=NULL) clearNumericPad(); if(m_databinder) delete m_databinder;}
 
 	void setData (const QString& iparamname, int idata, const QPoint& irange, int idecdigits=0)
 	{
@@ -466,12 +485,17 @@ public:
 		m_dec_inv_pow = 1.0f / pow(10, m_decdigits);
 	}
 
+    virtual QVariant getReferenceData () const { if(m_databinder) return m_databinder->getBindedStuff(getFactory()); else return 0; }
+    virtual void setReferenceData (QVariant idata) { if(m_databinder) m_databinder->setBindedStuff(getFactory(), idata); else (void)idata; }
+    virtual OverlayItemDataBinder* getReferenceDataBinder () const { return m_databinder; }
+
 	bool hasDecimals () const { return m_decdigits>0; }
 	int getDecDigitsNb () const { return m_decdigits; }
 	bool hasNegativeRange () const { return m_vrange.x()<0; }
 
 	bool cursorIsDraggin () const { return m_draggin_cursor; }
 
+	//
 	void setHasNoSlider (bool ihasslider=false) { m_has_slider = ihasslider; }
 	void setHasNoNumPad (bool ishowpad=false) { m_show_numpad = ishowpad; }
 
@@ -483,14 +507,23 @@ signals:
 	void dataChanged (int value, int decdigits, int ID);
 
 public slots:
-	void setData (int id, int idata)
+	void setData (int id, QVariant idata)
 	{
 		if(getID()!=id) return;
-		//std::cout << "OverlaySliderItem->UndoRedo slot called, id: " << id << " , data: " << idata << std::endl;
+		//std::cout << "OverlaySliderItem->UndoRedo slot called, id: "
+		//<< id << " , data: " << idata << std::endl;
+		if(m_decdigits)
+		{
+			int rdata = (float)idata.toFloat() * pow(10,m_decdigits);
+			m_data = rdata;
+			if(m_num_pad) updatePadData (rdata);
+		}else
+		{
+			m_data = idata.toInt();
+			if(m_num_pad) updatePadData (idata.toInt());
+		}
 
 		m_force_repaint = true;
-		m_data = idata;
-		if(m_num_pad) updatePadData (idata);
 	}
 
 protected:
@@ -585,11 +618,13 @@ private:
 
     QString m_paramname;
 
+    // data
+    int m_data;
     int m_decdigits;
+    QPoint m_vrange;
     float m_dec_inv_pow;
 
-    QPoint m_vrange;
-    int m_data;
+    OverlayItemDataBinder* m_databinder;
 };
 
 
@@ -699,6 +734,15 @@ class OverlayItemsController : public IGLViewerDevice
     friend OverlayNavigatorItem;
 
 public:
+    enum SETTINGSITEMS
+    {
+    	MAINCONTROLLER = 0,
+    	RENDERSETTINGS,
+    	CAMERASETTINGS,
+    	TONEMAPSETTINGS,
+    	ENVSETTINGS
+    };
+
     enum LAYOUTTYPE
     {
     	BOTTOMLEFT = 0,
@@ -707,8 +751,11 @@ public:
     	TOPRIGHT
     };
 
-    OverlayItemsController (GLViewer *widget, OverlayItemsBuilder * iBuilder);
+    OverlayItemsController (int iID, GLViewer *widget, OverlayItemsBuilder * iBuilder);
     ~OverlayItemsController();
+
+	GLViewer * getParentWidget () const { return m_widget; }
+
 
     bool isEnabled () const { return m_is_enabled; }
     bool isPainting () const { return m_is_painting; }
@@ -732,19 +779,17 @@ public:
 
     void reset ();
 
-	GLViewer * getParentWidget () const{ return m_widget; }
-
     void paint (QPainter* iPainter);
 
 signals:
 	void anim_ended (int, int);
 	void items_ready ();
 	void resized ();
-	void undo_redo_items (int id, int idata);
+	void undo_redo_items (int id, QVariant idata);
 
 protected:
 
-    enum
+    enum ANIMTIME
     {
 		ANINSTEP = 20,
 		ANIMTIME = 160
@@ -784,17 +829,20 @@ private slots:
 	virtual void viewerInit () {};
     virtual void viewerResized ();
 	virtual void viewerPaint (QPainter* iPainter) { this->paint(iPainter); }
-    virtual void viewerUndoRedo(int id, int slot, int idata);
+    virtual void viewerUndoRedo(int id, int slot, QVariant idata);
 
 private:
     virtual void registerDevice ();
 
 private:
 
+    int m_id;
+
     QSize m_widget_size;
 
     bool m_is_enabled;
     bool m_is_painting;
+
     int m_anim_cur_item;
     int m_anim_last_item;
     bool m_anim_todisplay;

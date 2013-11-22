@@ -117,7 +117,7 @@ bool OverlayFramebufferCtrlsBuilder::buildItems (	OverlayItemsController * const
 }
 
 OverlayFramebufferCtrls::OverlayFramebufferCtrls (GLViewer *iWidget)
-: OverlayItemsController(iWidget, new OverlayFramebufferCtrlsBuilder())
+: OverlayItemsController(GLViewer::FRAMEBUFFERSETTINGS, iWidget, new OverlayFramebufferCtrlsBuilder())
 {
 
 	///////////////////////////////////////////////////////////
