@@ -158,7 +158,7 @@ void MainWindow::renderVerbose(QString iV)
 void MainWindow::about()
 {
    QMessageBox::about(this, tr("About Application"),
-            tr("<b>Rombo</b> renderer \n"
+            tr("<b>Rombo Studio</b>\n"
                "@ ctrlstudio "));
 }
 

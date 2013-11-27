@@ -17,13 +17,18 @@ int main(int argc, char *argv[])
     QSplashScreen *splash = new QSplashScreen;
     splash->setPixmap(QPixmap(":/images/splash.png"));
     splash->show();
+
     Qt::Alignment topRight = Qt::AlignRight | Qt::AlignTop;
+    Qt::Alignment midLeft = Qt::AlignLeft | Qt::AlignVCenter;
+
     splash->showMessage(QObject::tr("Setting up application ..."),
-                        topRight, Qt::white);
+    		midLeft, Qt::white);
+    //QTimer::singleShot(3000, &app, SLOT(quit()));
+
+    splash->showMessage(QObject::tr("Initializing application ..."),
+    					midLeft, Qt::white);
 
 	MainWindow win( argc, argv );
-    splash->showMessage(QObject::tr("Initializing renderer ..."),
-                        topRight, Qt::white);
 
     splash->finish(&win);
     delete splash;
