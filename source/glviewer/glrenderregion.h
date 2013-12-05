@@ -21,6 +21,10 @@
 
 QT_FORWARD_DECLARE_CLASS(QBypassWidget)
 
+#ifdef GFXVIEW
+#include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
+#endif
 
 class GLViewer;
 class RenderRegion;
@@ -218,6 +222,7 @@ public:
 
 protected:
     inline GLViewer* getHostWidget () const { return m_widget; }
+
     bool eventFilter (QObject *object, QEvent *event);
 
     inline bool isActive  () const { return g_renderregion; }

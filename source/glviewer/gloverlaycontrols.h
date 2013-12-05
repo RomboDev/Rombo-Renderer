@@ -12,7 +12,13 @@
 #include <QtGui>
 QT_FORWARD_DECLARE_CLASS(QBypassWidget)
 
+
 #include "../glviewer.h"
+
+#ifdef GFXVIEW
+#include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
+#endif
 
 class GLViewer;
 class OverlayItem;

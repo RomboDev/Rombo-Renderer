@@ -5,6 +5,7 @@ QT        += core gui opengl
 
 HEADERS   += source/rombo.h \
 			source/renderdevice.h \
+			source/glmanager.h \
 			source/glviewer.h \
 			source/glviewer/IGLViewerDevice.h \
 		    source/glviewer/glrendercamera.h \

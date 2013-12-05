@@ -20,6 +20,9 @@
 
 
 #include "glviewer.h"
+#ifdef GFXVIEW
+#include "glmanager.h"
+#endif
 
 
 class MainWindow : public QMainWindow
@@ -74,6 +77,10 @@ private:
     QString strippedName(const QString &fullFileName);
 
     GLViewer* rGLDevice;	//GL viewer
+#ifdef GFXVIEW
+    RenderGLView* glView;
+#endif
+
 
     QDockWidget *sceneEditDockWidget;
     QPlainTextEdit *textEdit;

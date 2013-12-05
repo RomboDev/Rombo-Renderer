@@ -351,7 +351,11 @@ bool RRSlotPoints::eventFilter(QObject *object, QEvent *event)
         	{
 				for (int i=0; i<m_slots.size(); ++i)
 				{
+#ifndef GFXVIEW
 					qreal d = QLineF(me->pos(), m_slots.at(i)->center).length();
+#else
+					qreal d = QLineF(me->scenePos(), m_slots.at(i)->center).length();
+#endif
 					if ((distance < 0 && d < m_slotSize) || d < distance)
 					{
 						m_isTweakingSlots = true;
@@ -398,7 +402,11 @@ bool RRSlotPoints::eventFilter(QObject *object, QEvent *event)
 				//check reset slots point
 				if(m_rregion->isBlocked())
 				{
+#ifndef GFXVIEW
 					qreal d = QLineF(me->pos(), m_reset_slots).length();
+#else
+					qreal d = QLineF(me->scenePos(), m_reset_slots).length();
+#endif
 					if (d < m_slotSize)
 					{
 						this->clearSlots();
@@ -420,7 +428,11 @@ bool RRSlotPoints::eventFilter(QObject *object, QEvent *event)
         		bool isBlocked = false;
 				for (int i=0; i<m_slots.size(); ++i)
 				{
+#ifndef GFXVIEW
 					qreal d = QLineF(me->pos(), m_slots.at(i)->center).length();
+#else
+					qreal d = QLineF(me->scenePos(), m_slots.at(i)->center).length();
+#endif
 					if ((distance < 0 && d < m_slotSize) || d < distance)
 					{
 						m_isTweakingSlots = true;
@@ -661,7 +673,11 @@ bool RRCornerPoints::eventFilter(QObject *object, QEvent *event)
         	{
 				for (int i=0; i<m_points.size(); ++i)
 				{
+#ifndef GFXVIEW
 					qreal d = QLineF(me->pos(), m_points.at(i)).length();
+#else
+					qreal d = QLineF(me->scenePos(), m_points.at(i)).length();
+#endif
 					if ((distance < 0 && d < m_pointSize) || d < distance)
 					{
 						distance = d;
@@ -1007,7 +1023,11 @@ bool RRMidPoints::eventFilter(QObject *object, QEvent *event)
         	{
 				for (int i=0; i<m_points.size(); ++i)
 				{
+#ifndef GFXVIEW
 					qreal d = QLineF(me->pos(), m_points.at(i)).length();
+#else
+					qreal d = QLineF(me->scenePos(), m_points.at(i)).length();
+#endif
 					if ((distance < 0 && d < m_pointSize) || d < distance)
 					{
 						distance = d;
@@ -1137,7 +1157,7 @@ bool RRMidPoints::eventFilter(QObject *object, QEvent *event)
 // RenderRegion	*********************************************************************************************//
 //***********************************************************************************************************//
 #ifdef GFXVIEW
-RenderRegion::RenderRegion(QGraphicsScene *widget)
+RenderRegion::RenderRegion(GLViewer *widget)
 #else
 RenderRegion::RenderRegion(GLViewer *widget)
 #endif

@@ -55,8 +55,10 @@ g_renderState(RSTOPPED)				//!< Start stopped
 
 , UndoRedoBase (this)
 {
+#ifndef GFXVIEW
 	setFocusPolicy(Qt::StrongFocus); //set initial focus here
 	setMouseTracking(true);
+#endif
 
 	//! Create render device
 	rrDevice = new embree::RomboRenderDevice(argc, argv);
@@ -732,7 +734,11 @@ void GLViewer::resizeGL(int width, int height) {
 /////////////////////////////////////////////////////////////////////////////
 // PaintGL //////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-void GLViewer::paintGL()
+#ifndef GFXVIEW
+void GLViewer::paintGL ()
+#else
+void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
+#endif
 {
 	if (g_renderState == RSTOPPED)
 		return;
@@ -746,10 +752,16 @@ void GLViewer::paintGL()
 	g_resetAccumulation = false;
 
 	//!< OpenGL prepare rendering ///////////////////////////////////////////
+#ifndef GFXVIEW
 	QPainter painter(this);
 	painter.beginNativePainting();
+#else
+	painter->beginNativePainting();
+#endif
+
 
 	saveGLState();	//!< save GL state
+
 
 	double dt0; //display timer
 	dt0 = rrDevice->getSecs();
@@ -958,9 +970,11 @@ void GLViewer::paintGL()
 	if (m_device_is_painting!=1) //otherwise ctrled by the devices
 		update();
 
+
 	restoreGLState();	//!< restore GL state for QPainter //////////////////
 
 	//!< Painter overlay ////////////////////////////////////////////////////
+#ifndef GFXVIEW
 	//painter.setRenderHint(QPainter::Antialiasing);
 	//drawInstructions(&painter, g_renderregion);//temp
 
@@ -969,6 +983,11 @@ void GLViewer::paintGL()
 
 	painter.endNativePainting();
 	painter.end();
+#else
+    emit painting (painter);
+
+    painter->endNativePainting();
+#endif
 
 	//!< Verbosity //////////////////////////////////////////////////////////
 	if (g_iVerbose >= 2 && (g_renderState || g_iCounter < g_minIterations)) {

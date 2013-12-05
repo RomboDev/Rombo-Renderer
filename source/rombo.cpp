@@ -5,9 +5,21 @@ MainWindow::MainWindow (int argc, char *argv[])
 	 // main GL renderer view
 	 rGLDevice = new GLViewer (argc,argv);
 
-
+#ifndef GFXVIEW
 	 rGLDevice->setMinimumSize(512,360);
 	 setCentralWidget( rGLDevice );	//add it to the window
+#else
+
+	 glView = new RenderGLView;
+	 glView->setFocusPolicy(Qt::StrongFocus);
+	 glView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	 glView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	 glView->setMinimumSize(512,360);
+
+	 glView->setGLScene(rGLDevice);
+	 setCentralWidget( glView );
+#endif
+
 
 
     // add docked text editor to display/modify scene files

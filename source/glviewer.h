@@ -16,6 +16,13 @@
 #include <QKeyEvent>
 #include <QUndoCommand>
 
+#define GFXVIEW_XXX
+#ifdef GFXVIEW
+#include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
+class RenderGLView;
+#endif
+
 #include "renderdevice.h"
 
 #include "glviewer/IGLViewerDevice.h"
@@ -74,13 +81,29 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class GLViewer : public QGLWidget, public UndoRedoBase
+class GLViewer :
+#ifndef GFXVIEW
+  public QGLWidget,
+#else
+  public QGraphicsScene,
+#endif
+  public UndoRedoBase
 {
 	Q_OBJECT
 
 public:
 	GLViewer ( int argc, char *argv[] );
 	~GLViewer ();
+
+#ifdef GFXVIEW
+	friend RenderGLView;
+	bool isSceneReady()
+    {
+    	if( g_renderState==RSTOPPED && g_minIterations==0)
+    		return false;
+    	else return true;
+    }
+#endif
 
 	enum OVERLAYCONTROLLERS
 	{
@@ -241,12 +264,30 @@ protected:
 	// OpenGL
     void initializeGL ();
     void resizeGL (int width, int height);
+#ifndef GFXVIEW
     void paintGL ();
+#else
+    void resize (int width, int height)
+    {
+        if (g_width == size_t(width) && g_height == size_t(height)) return;
+
+        g_width = width; g_height = height;
+        rrDevice->newFramebuffer (g_width, g_height);
+        rrDevice->updateCamera();
+    }
+    void drawBackground(QPainter *painter, const QRectF &rect);
+#endif
 
     // Mouse Events
+#ifndef GFXVIEW
     void mouseMoveEvent (QMouseEvent *e);
     void mousePressEvent (QMouseEvent *e);
     void mouseReleaseEvent (QMouseEvent *e);
+#else
+    void mouseMoveEvent(QGraphicsSceneMouseEvent  *e);
+    void mousePressEvent(QGraphicsSceneMouseEvent  *e);
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent  *e);
+#endif
 
     // Keyboard Events
     void keyPressEvent (QKeyEvent *e);

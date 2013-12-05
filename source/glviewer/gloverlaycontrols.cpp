@@ -93,11 +93,23 @@ bool OverlayItem::eventFilter (QObject *object, QEvent *event)
     {
         switch (event->type())
         {
+#ifndef GFXVIEW
         case QEvent::MouseMove:
+#else
+		case QEvent::GraphicsSceneMouseMove:
+#endif
         {
-        	QMouseEvent *e = (QMouseEvent *) event;
-        	int x = e->pos().x();
-        	int y = e->pos().y();
+
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
+
 
 			if (m_qpix_rect_cur.intersects (QRect(x, y, 1, 1)))
 			{
@@ -333,11 +345,21 @@ bool OverlayAnimSubItem::eventFilter (QObject *object, QEvent *event)
         switch (event->type())
         {
 
-		case QEvent::MouseMove:
+#ifndef GFXVIEW
+        case QEvent::MouseMove:
+#else
+		case QEvent::GraphicsSceneMouseMove:
+#endif
 		{
-			QMouseEvent *e = (QMouseEvent *) event;
-			int x = e->pos().x();
-			int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
 			if (getCurrentPos().intersects (QRect(x, y, 1, 1)))
 			{
@@ -349,11 +371,21 @@ bool OverlayAnimSubItem::eventFilter (QObject *object, QEvent *event)
 			}
 		} break;
 
-        case QEvent::MouseButtonPress:
+#ifndef GFXVIEW
+		case QEvent::MouseButtonPress:
+#else
+		case QEvent::GraphicsSceneMousePress:
+#endif
         {
-        	QMouseEvent *e = (QMouseEvent *) event;
-        	int x = e->pos().x();
-        	int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
 			if (getCurrentPos().intersects (QRect(x, y, 1, 1)))
 			{
@@ -1079,7 +1111,11 @@ bool OverlaySliderItem::eventFilter (QObject *object, QEvent *event)
 
         case QEvent::KeyPress:
         {
+#ifndef GFXVIEW
         	QPoint mpos = getFactory()->getParentWidget()->mapFromGlobal (QCursor::pos());
+#else
+        	QPoint mpos = QPoint (0,0); //TODO:: find qgraphics equivalent of mapFromGlobal !!!!!!!!!!!!!!!!
+#endif
 			if (!getCurrentPos().intersects (QRect(mpos.x(), mpos.y(), 1, 1)))	//over whole item rect
 			return false;
 
@@ -1155,11 +1191,21 @@ bool OverlaySliderItem::eventFilter (QObject *object, QEvent *event)
         } break;
 
 
+#ifndef GFXVIEW
         case QEvent::MouseButtonPress:
+#else
+		case QEvent::GraphicsSceneMousePress:
+#endif
         {
-        	QMouseEvent *e = (QMouseEvent *) event;
-        	int x = e->pos().x();
-        	int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
         	QRect eRect (x, y, 1, 1);
 			if (getCurrentPos().intersects (eRect))	//over whole item rect
@@ -1198,13 +1244,23 @@ bool OverlaySliderItem::eventFilter (QObject *object, QEvent *event)
 			}
         } break;
 
-        case QEvent::MouseMove:
+#ifndef GFXVIEW
+		case QEvent::MouseMove:
+#else
+		case QEvent::GraphicsSceneMouseMove:
+#endif
         {
         	if(!m_has_slider) return false;
 
-        	QMouseEvent *e = (QMouseEvent *) event;
-        	int x = e->pos().x();
-        	int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
         	if(!m_draggin_cursor)							//!< check if we're dragging
         	{
@@ -1260,7 +1316,11 @@ bool OverlaySliderItem::eventFilter (QObject *object, QEvent *event)
         } break;
 
 
+#ifndef GFXVIEW
         case QEvent::MouseButtonRelease:
+#else
+        case QEvent::GraphicsSceneMouseRelease:
+#endif
         {
         	if(m_draggin_cursor)
         	{
@@ -1319,11 +1379,21 @@ bool OverlayButtonItem::eventFilter (QObject *object, QEvent *event)
     {
         switch (event->type())
         {
-		case QEvent::MouseButtonPress:
+#ifndef GFXVIEW
+        case QEvent::MouseButtonPress:
+#else
+        case QEvent::GraphicsSceneMousePress:
+#endif
 		{
-			QMouseEvent *e = (QMouseEvent *) event;
-			int x = e->pos().x();
-			int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
 			if (getCurrentPos().intersects (QRect(x, y, 1, 1)))	//over whole item rect
 			{
@@ -1370,11 +1440,21 @@ bool OverlayBoolItem::eventFilter (QObject *object, QEvent *event)
     {
         switch (event->type())
         {
-		case QEvent::MouseButtonPress:
+#ifndef GFXVIEW
+        case QEvent::MouseButtonPress:
+#else
+		case QEvent::GraphicsSceneMousePress:
+#endif
 		{
-			QMouseEvent *e = (QMouseEvent *) event;
-			int x = e->pos().x();
-			int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
 			if (getCurrentPos().intersects (QRect(x, y, 1, 1)))	//over whole item rect
 			{
@@ -1463,6 +1543,7 @@ void OverlayNavigatorItem::factoryResized ()
 {
 	GLViewer* mWidget = getFactory()->getParentWidget();
 
+
 	if(mWidget->fbNeedsNavigator())
 	{ 	this->setIsHidden (false); /*unhide navigator*/ }
 	else
@@ -1538,7 +1619,11 @@ bool OverlayNavigatorItem::eventFilter (QObject *object, QEvent *event)
     {
         switch (event->type())
         {
-		case QEvent::MouseButtonPress:
+#ifndef GFXVIEW
+        case QEvent::MouseButtonPress:
+#else
+		case QEvent::GraphicsSceneMousePress:
+#endif
 		{
 			if(m_force_blockme<0)
 			{
@@ -1546,9 +1631,15 @@ bool OverlayNavigatorItem::eventFilter (QObject *object, QEvent *event)
 				return true;;
 			}
 
-			QMouseEvent *e = (QMouseEvent *) event;
-			int x = e->pos().x();
-			int y = e->pos().y();
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
 
 			//press over subregion rect
 			if (m_subregion.contains (x, y))
@@ -1565,16 +1656,25 @@ bool OverlayNavigatorItem::eventFilter (QObject *object, QEvent *event)
 				return true; //!< stop event propagation
 			}
 		} break;
+#ifndef GFXVIEW
 		case QEvent::MouseMove:
+#else
+		case QEvent::GraphicsSceneMouseMove:
+#endif
 		{
 			if(m_rr_isdragging)
 			{
 				GLViewer* mWidget = getFactory()->getParentWidget();
 
+#ifndef GFXVIEW
 				QMouseEvent *me = (QMouseEvent *) event;
-				qreal dX = me->pos().x();
-				qreal dY = me->pos().y();
-
+				int dX = me->pos().x();
+				int dY = me->pos().y();
+#else
+				QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+				int dX = me->scenePos().x();
+				int dY = me->scenePos().y();
+#endif
 
 				qreal zFactor = 1.0f;
 			    if(mWidget->getFbZoomMode())
@@ -1662,7 +1762,11 @@ bool OverlayNavigatorItem::eventFilter (QObject *object, QEvent *event)
 				return true; //!< stop event propagation
 			}
 		} break;
-		case QEvent::MouseButtonRelease:
+#ifndef GFXVIEW
+        case QEvent::MouseButtonRelease:
+#else
+        case QEvent::GraphicsSceneMouseRelease:
+#endif
 		{
 			if(m_rr_isdragging)
 			{
@@ -2093,11 +2197,23 @@ bool OverlayItemsController::eventFilter (QObject *object, QEvent *event)
         switch (event->type())
         {
 
+#ifndef GFXVIEW
         case QEvent::MouseButtonPress:
+#else
+        case QEvent::GraphicsSceneMousePress:
+#endif
         {
-			QMouseEvent *e = (QMouseEvent *) event;
-			int x = e->pos().x();
-			int y = e->pos().y();
+
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
+
 
 			if (m_qpix_rect.intersects (QRect(x, y, 1, 1)))
 			{
