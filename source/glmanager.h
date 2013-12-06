@@ -18,22 +18,32 @@ class RenderGLView : public QGraphicsView
 {
 
 public:
-	RenderGLView(){}
+	RenderGLView():mScene(NULL) {}
 
 	void setGLScene( QGraphicsScene* iScene )
 	{
 		QGLWidget * glWidget = new QGLWidget(QGLFormat(QGL::DoubleBuffer));
-		glWidget->makeCurrent();
 
-		this->setViewport( glWidget );
+		this->setViewport (glWidget);
 		this->setViewportUpdateMode (QGraphicsView::FullViewportUpdate);
-		//this->setOptimizationFlag (QGraphicsView::DontAdjustForAntialiasing);
+		this->setCacheMode (QGraphicsView::CacheNone);
+		this->setOptimizationFlag (QGraphicsView::DontAdjustForAntialiasing);
+		//this->setOptimizationFlag (QGraphicsView::DontSavePainterState);
+		this->setStyleSheet (	"border: none; "
+								"border-style: none; "
+								"padding: 0px 0px 0px 0px; "
+								"margin-left: -3px; "
+								"margin-right: -3px; "
+								"margin-top: -3px; "
+								"margin-bottom: -1px;" );
 
 		mScene = qobject_cast<GLViewer*>(iScene);
+
 #ifdef GFXVIEW //or it won't compile in QGLWidget mode
 		if(mScene)
 		this->setScene( mScene );
 #endif
+
 		this->show();
 	}
 
@@ -42,33 +52,37 @@ protected:
 	{
 		if( scene() )
 		{
-			this->fitInView( QRect(QPoint(0,0), e->size()) );
-
-			scene()->setSceneRect( QRect(QPoint(0,0), e->size()));
+			std::cout << "QGraphicsView->resizeEvent: " << e->size().width() << ", " << e->size().height() << std::endl;
+			//scene()->setSceneRect( QRect(QPoint(0,0), e->size()) );
 
 			if(mScene->isSceneReady())
 			{
+				std::cout << "QGraphicsView->resizeEvent->resizeGL" << std::endl;
 				mScene->resizeGL(e->size().width(),e->size().height());
 			}
 			else
 			{
+				std::cout << "QGraphicsView->resizeEvent->resize" << std::endl;
 				mScene->resize(e->size().width(),e->size().height());
 			}
 		}
 
-		QGraphicsView::resizeEvent(e);
+		//QGraphicsView::resizeEvent(e);
 	}
 
 	void showEvent(QShowEvent*e)
 	{
 		if( scene() )
 		{
+			std::cout << "QGraphicsView->showEvent: " << this->width() << ", " << this->height() << std::endl;
 			scene()->setSceneRect( QRect(QPoint(0,0), QPoint(this->width(),this->height())) );
 
 			if(mScene->isSceneReady()){
+				std::cout << "QGraphicsView->showEvent->resizeGL" << std::endl;
 				mScene->resizeGL(this->width(),this->height());
 			}
 			else{
+				std::cout << "QGraphicsView->showEvent->resize" << std::endl;
 				mScene->resize(this->width(),this->height());
 			}
 		}

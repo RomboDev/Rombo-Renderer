@@ -15,8 +15,8 @@ MainWindow::MainWindow (int argc, char *argv[])
 	 glView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	 glView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	 glView->setMinimumSize(512,360);
-
-	 glView->setGLScene(rGLDevice);
+	 glView->setGLScene( rGLDevice );
+	 glView->setAlignment(Qt::AlignBottom);
 	 setCentralWidget( glView );
 #endif
 

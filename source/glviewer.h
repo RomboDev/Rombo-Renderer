@@ -103,6 +103,23 @@ public:
     		return false;
     	else return true;
     }
+	void forceRepaint ()
+	{
+		QGraphicsView * parentView = this->views()[0];
+		if(parentView)
+		{
+			std::cout << "GLViewer->force repainting: " << this->sceneRect().height() << ", " << this->sceneRect().width() << std::endl;
+			/*QWidget * viewport = parentView->viewport();
+			viewport->update();*/
+			//parentView->scene()->update(this->sceneRect());
+			parentView->invalidateScene();
+			parentView->scene()->update();
+			//this->invalidate();
+		}else
+		{
+			std::cout << "GLViewer->failed getting parent scene" << std::endl;
+		}
+	}
 #endif
 
 	enum OVERLAYCONTROLLERS

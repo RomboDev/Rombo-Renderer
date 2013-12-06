@@ -2112,7 +2112,9 @@ void OverlayItemsController::anim_ctrl()
 			m_ctrls.clear();
 			m_host_ctrls = NULL;
 		}
-
+#ifdef GFXVIEW
+		//getParentWidget()->forceRepaint();
+#endif
 	}else
 	{												//!< elapsed time
 		m_elapsed = (m_elapsed + qobject_cast<QTimer*>(sender())->interval()) % ANIMTIME;

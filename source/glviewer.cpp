@@ -145,11 +145,11 @@ void GLViewer::parseSceneAndRender(const std::string& iPath)
 		int tW, tH;
 		tW = g_width;
 		tH = g_height;
-		g_width = g_width-1;
-		g_height = g_height-1;
+		//g_width = g_width-1;
+		//g_height = g_height-1;
 
 		this->resizeGL (tW, tH);
-		update();
+		//update();
 #endif
 	}
 }
@@ -282,7 +282,7 @@ void GLViewer::mousePressEvent(QMouseEvent* e)
 #else
 		void GLViewer::mousePressEvent(QGraphicsSceneMouseEvent* e)
 #endif
-		{
+{
 	if (g_renderState == RSTOPPED) {
 		e->accept();
 		return;
@@ -304,7 +304,7 @@ void GLViewer::mouseMoveEvent(QMouseEvent* e)
 #else
 		void GLViewer::mouseMoveEvent(QGraphicsSceneMouseEvent* e)
 #endif
-		{
+{
 	if (g_renderState == RSTOPPED) {
 		e->accept();
 		return;
@@ -326,11 +326,10 @@ void GLViewer::mouseReleaseEvent(QMouseEvent* e)
 #else
 		void GLViewer::mouseReleaseEvent(QGraphicsSceneMouseEvent* e)
 #endif
-		{
+{
 	//!< RenderRegion finishing /////////////////////////////////////////////
 	if (g_renderregion) // delegated to rregion class ////////////////////////
-	{
-	}
+	{}
 }
 
 /******************************************************************************/
@@ -985,7 +984,6 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 	painter.end();
 #else
     emit painting (painter);
-
     painter->endNativePainting();
 #endif
 
