@@ -757,6 +757,12 @@ public:
     	TOPRIGHT
     };
 
+    enum CTRLCOLORS
+    {
+    	fgColor = 0xcccccc
+    };
+
+
     OverlayItemsController (int iID, GLViewer *widget, OverlayItemsBuilder * iBuilder);
     ~OverlayItemsController();
 

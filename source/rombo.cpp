@@ -5,9 +5,22 @@ MainWindow::MainWindow (int argc, char *argv[])
 	 // main GL renderer view
 	 rGLDevice = new GLViewer (argc,argv);
 
+	 rGLDevice->setBackgroundRole (QPalette::Dark);
+	 //QPalette p( rGLDevice->palette() );
+	 //p.setColor( QPalette::Window, Qt::black );
+	 //rGLDevice->setPalette( p );
+
+	 glSplitter = new GLSplitter();
+	 glSplitter->setOrientation(Qt::Vertical);
+	 glSplitter->setHandleWidth(2);
+	 glSplitter->setOpaqueResize(false);
+
+	 glSplitter->addWidget (rGLDevice);
+	 glSplitter->addWidget (new QPlainTextEdit);
+
 #ifndef GFXVIEW
 	 rGLDevice->setMinimumSize(512,360);
-	 setCentralWidget( rGLDevice );	//add it to the window
+	 setCentralWidget( glSplitter );	//add it to the window
 #else
 
 	 glView = new RenderGLView;
@@ -16,6 +29,7 @@ MainWindow::MainWindow (int argc, char *argv[])
 	 glView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	 glView->setMinimumSize(512,360);
 	 glView->setGLScene( rGLDevice );
+	 //glView->setGLScenePointer( rGLDevice );
 	 glView->setAlignment(Qt::AlignBottom);
 	 setCentralWidget( glView );
 #endif
@@ -26,8 +40,7 @@ MainWindow::MainWindow (int argc, char *argv[])
     textEdit = new QPlainTextEdit;
     sceneEditDockWidget = new QDockWidget(tr("Scene Editor"));
     sceneEditDockWidget->setMinimumWidth(280);
-    sceneEditDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea
-                                       | Qt::RightDockWidgetArea);
+    sceneEditDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 
     sceneEditDockWidget->setWidget( textEdit );
     addDockWidget(Qt::RightDockWidgetArea, sceneEditDockWidget);
@@ -38,13 +51,15 @@ MainWindow::MainWindow (int argc, char *argv[])
 
     consoleDockWidget = new QDockWidget(tr("Render console"));
     consoleDockWidget->setMinimumWidth(240);
-    consoleDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea
-                                      | Qt::RightDockWidgetArea);
+    consoleDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     consoleDockWidget->setWidget( outConsole );
     addDockWidget(Qt::RightDockWidgetArea, consoleDockWidget);
 
 
     // rig slots and signaling
+    connect(	rGLDevice, 	SIGNAL (splitterMoved (int)),
+    			glSplitter, SLOT   (splitting (int)) );
+
     connect(	rGLDevice, 	SIGNAL (verboseStream (QString)),
    		 		outConsole, SLOT   (appendPlainText (QString)) );
 
@@ -65,6 +80,10 @@ MainWindow::MainWindow (int argc, char *argv[])
 
     connect(	this, 		SIGNAL (sceneUnloading ()),
    		 		rGLDevice, 	SLOT   (flushScene ()) );
+#ifdef GFXVIEW
+    connect(	rGLDevice, 	SIGNAL (forceresize ()),
+    			glView, 	SLOT   (doresizing ()) );
+#endif
 
     // create GUI
     createActions();
@@ -77,10 +96,10 @@ MainWindow::MainWindow (int argc, char *argv[])
     readSettings();
 
     // connect just buildt actions
-    connect( sceneEditDockWidget, SIGNAL( visibilityChanged(bool) ),
-   		 	 showSceneEditAct, SLOT( setChecked(bool) ) );
-    connect( consoleDockWidget, SIGNAL( visibilityChanged(bool) ),
-   		 	   showConsoleAct, SLOT( setChecked(bool) ) );
+    connect( sceneEditDockWidget, 	SIGNAL( visibilityChanged(bool) ),
+   		 	 showSceneEditAct, 		SLOT( setChecked(bool) ) );
+    connect( consoleDockWidget, 	SIGNAL( visibilityChanged(bool) ),
+   		 	 showConsoleAct, 		SLOT( setChecked(bool) ) );
 
     // setup content changed rig
     connect(textEdit->document(), SIGNAL(contentsChanged()),

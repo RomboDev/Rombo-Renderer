@@ -76,6 +76,7 @@ private:
     void updateRecentFileActions();
     QString strippedName(const QString &fullFileName);
 
+    GLSplitter *glSplitter; //TODO:manage delete
     GLViewer* rGLDevice;	//GL viewer
 #ifdef GFXVIEW
     RenderGLView* glView;

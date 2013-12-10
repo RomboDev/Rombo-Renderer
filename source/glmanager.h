@@ -13,80 +13,66 @@
 #include <QResizeEvent>
 
 #include "glviewer.h"
+/*
+CC            = icc
+CXX           = icpc
+DEFINES       = -DQT_WEBKIT -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED
+CFLAGS        = -m64 -pipe -g -Wall -W -D_REENTRANT $(DEFINES)
+CXXFLAGS      = -m64 -pipe -g -Wall -W -D_REENTRANT $(DEFINES)
+INCPATH       = -I/usr/share/qt4/mkspecs/default -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include/QtOpenGL -I/usr/include -I/usr/X11R6/include -Idebug -I. -I/home/max/git/embree/embree -I/home/max/git/embree/examples/common  -I/home/max/git/embree/examples/renderer
+LINK          = icpc
+LFLAGS        = -m64
+LIBS          = $(SUBLIBS)  -L/usr/lib64 -L/usr/X11R6/lib64 -lQtOpenGL -L/usr/lib64 -L/usr/X11R6/lib64 -L/home/max/git/embree/examples/renderer/device/Release -L/home/max/git/embree/examples/common/image/Release -L/home/max/git/embree/examples/common/lexers/Release -L/home/max/git/embree/embree/sys/Release -lQtGui -lQtCore -lGL -lpthread -lembree_device -lembree_image -lembree_lexers -lembree_sys
+AR            = ar cqs
+*/
+
+/*
+CC            = icc
+CXX           = icpc
+DEFINES       = -DQT_WEBKIT -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED
+CFLAGS        = -m64 -pipe -fno-rtti -DNORTTI -O3 -axAVX -xAVX -Wall -W -D_REENTRANT $(DEFINES)
+CXXFLAGS      = -m64 -pipe -fno-rtti -DNORTTI -O3 -axAVX -xAVX -Wall -W -D_REENTRANT $(DEFINES)
+INCPATH       = -I/usr/share/qt4/mkspecs/default -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include/QtOpenGL -I/usr/include -I/usr/X11R6/include -Irelease -I. -I/home/max/git/embree/embree -I/home/max/git/embree/examples/common  -I/home/max/git/embree/examples/renderer
+LINK          = icpc
+LFLAGS        = -m64 -Wl,-O3 -static-intel
+LIBS          = $(SUBLIBS)  -L/usr/lib64 -L/usr/X11R6/lib64 -L/usr/lib64 -L/usr/X11R6/lib64 -L/home/max/git/embree/examples/renderer/device/Release -L/home/max/git/embree/examples/common/image/Release -L/home/max/git/embree/examples/common/lexers/Release -L/home/max/git/embree/embree/sys/Release -lQtGui -lQtCore -lQtOpenGL -lGL -lpthread -lembree_device -lembree_image -lembree_lexers -lembree_sys
+AR            = ar cqs
+*/
 
 class RenderGLView : public QGraphicsView
 {
+	Q_OBJECT
+	friend GLViewer;
 
 public:
-	RenderGLView():mScene(NULL) {}
+	RenderGLView();
 
-	void setGLScene( QGraphicsScene* iScene )
+	void setGLScene( QGraphicsScene* iScene );
+	void setGLScene();
+	void setGLScenePointer( QGraphicsScene* iScene );
+
+public slots:
+	void doresizing ()
 	{
-		QGLWidget * glWidget = new QGLWidget(QGLFormat(QGL::DoubleBuffer));
+		std::cout << "glmanager force resize slots called: " << mScene->getWidgetWidth() << ", " << mScene->getWidgetHeight() << std::endl;
 
-		this->setViewport (glWidget);
-		this->setViewportUpdateMode (QGraphicsView::FullViewportUpdate);
-		this->setCacheMode (QGraphicsView::CacheNone);
-		this->setOptimizationFlag (QGraphicsView::DontAdjustForAntialiasing);
-		//this->setOptimizationFlag (QGraphicsView::DontSavePainterState);
-		this->setStyleSheet (	"border: none; "
-								"border-style: none; "
-								"padding: 0px 0px 0px 0px; "
-								"margin-left: -3px; "
-								"margin-right: -3px; "
-								"margin-top: -3px; "
-								"margin-bottom: -1px;" );
+		if(scene())
+		{
+			//invalidateScene();
+			//scene()->update();
 
-		mScene = qobject_cast<GLViewer*>(iScene);
-
-#ifdef GFXVIEW //or it won't compile in QGLWidget mode
-		if(mScene)
-		this->setScene( mScene );
-#endif
-
-		this->show();
+			QSize tempSize (mScene->getWidgetWidth(), mScene->getWidgetHeight());
+			this->resizeEvent(new QResizeEvent(tempSize,tempSize));
+		}else
+		{
+			std::cout << "glmanager setting scene: " << std::endl;
+			setGLScene();
+		}
 	}
 
 protected:
-	void resizeEvent( QResizeEvent* e)
-	{
-		if( scene() )
-		{
-			std::cout << "QGraphicsView->resizeEvent: " << e->size().width() << ", " << e->size().height() << std::endl;
-			//scene()->setSceneRect( QRect(QPoint(0,0), e->size()) );
-
-			if(mScene->isSceneReady())
-			{
-				std::cout << "QGraphicsView->resizeEvent->resizeGL" << std::endl;
-				mScene->resizeGL(e->size().width(),e->size().height());
-			}
-			else
-			{
-				std::cout << "QGraphicsView->resizeEvent->resize" << std::endl;
-				mScene->resize(e->size().width(),e->size().height());
-			}
-		}
-
-		//QGraphicsView::resizeEvent(e);
-	}
-
-	void showEvent(QShowEvent*e)
-	{
-		if( scene() )
-		{
-			std::cout << "QGraphicsView->showEvent: " << this->width() << ", " << this->height() << std::endl;
-			scene()->setSceneRect( QRect(QPoint(0,0), QPoint(this->width(),this->height())) );
-
-			if(mScene->isSceneReady()){
-				std::cout << "QGraphicsView->showEvent->resizeGL" << std::endl;
-				mScene->resizeGL(this->width(),this->height());
-			}
-			else{
-				std::cout << "QGraphicsView->showEvent->resize" << std::endl;
-				mScene->resize(this->width(),this->height());
-			}
-		}
-	}
+	void resizeEvent( QResizeEvent* e);
+	void showEvent(QShowEvent*e);
 
 private:
 	GLViewer* mScene;

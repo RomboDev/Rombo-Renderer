@@ -7,14 +7,112 @@
 
 #include "glviewer.h"
 
-
+////////////////
 void UndoRedo::connectDevice (OverlayItemsController* iSettingCtrl)
 {
 	connect (	this, 			SIGNAL 	(undo_redo			(int, int, QVariant)),
 				iSettingCtrl, 	SLOT 	(viewerUndoRedo		(int, int, QVariant)) );
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+GLViewerSplitterHandle::GLViewerSplitterHandle (GLViewer *widget) : m_widget(widget), m_isdragging(false)
+{
+	registerDevice ();
+}
+void GLViewerSplitterHandle::registerDevice ()
+{
+	m_widget->installEventFilter(this);
 
+	connect (this, 		SIGNAL (devicePainting(int)),
+			m_widget, 	SLOT (deviceIsPainting(int)) );
+
+	//connect (m_widget, 	SIGNAL (init()),
+	//		this, 		SLOT (viewerInit()) );
+	connect (m_widget, 	SIGNAL (resized()),
+			this, 		SLOT (viewerResized()) );
+	connect (m_widget, 	SIGNAL (painting(QPainter*)),
+			this, 		SLOT (viewerPaint(QPainter*)) );
+}
+void GLViewerSplitterHandle::paint (QPainter* iPainter)
+{
+	iPainter->fillRect(m_qpix_rect, QColor(200,200,0));
+}
+void GLViewerSplitterHandle::viewerResized ()
+{
+	m_qpix_rect = QRect (QPoint(m_widget->width()-32,m_widget->height()-24), QPoint(m_widget->width()-48,m_widget->height()));
+}
+bool GLViewerSplitterHandle::eventFilter (QObject *object, QEvent *event)
+{
+	if (object == m_widget)
+	{
+		switch (event->type())
+		{
+#ifndef GFXVIEW
+		case QEvent::MouseButtonPress:
+#else
+		case QEvent::GraphicsSceneMousePress:
+#endif
+		{
+#ifndef GFXVIEW
+			QMouseEvent *me = (QMouseEvent *) event;
+			int x = me->pos().x();
+			int y = me->pos().y();
+#else
+			QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+			int x = me->scenePos().x();
+			int y = me->scenePos().y();
+#endif
+
+			if (m_qpix_rect.contains (x, y))
+			{
+				//start draggin
+				m_isdragging = true;
+
+				QApplication::setOverrideCursor(QCursor(Qt::ClosedHandCursor));
+				return true; //stop event propagation
+			}
+		}break;
+#ifndef GFXVIEW
+		case QEvent::MouseMove:
+#else
+		case QEvent::GraphicsSceneMouseMove:
+#endif
+		{
+			if(m_isdragging)
+			{
+#ifndef GFXVIEW
+				QMouseEvent *me = (QMouseEvent *) event;
+				int dX = me->pos().x();
+				int dY = me->pos().y();
+#else
+				QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *) event;
+				int dX = me->scenePos().x();
+				int dY = me->scenePos().y();
+#endif
+				m_widget->emit splitterMoved (dY);
+				emit devicePainting (2);
+			}
+		}break;
+#ifndef GFXVIEW
+        case QEvent::MouseButtonRelease:
+#else
+        case QEvent::GraphicsSceneMouseRelease:
+#endif
+		{
+			if(m_isdragging)
+			{
+				m_isdragging = false;
+				QApplication::restoreOverrideCursor();
+				emit devicePainting (false);
+			}
+		} break;
+		}
+	}
+	return false;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 GLViewer::GLViewer(int argc, char *argv[]) :
 g_renderState(RSTOPPED)				//!< Start stopped
 
@@ -52,6 +150,7 @@ g_renderState(RSTOPPED)				//!< Start stopped
 , m_rregion(NULL)
 , m_renderer_ctrl(NULL)
 , m_framebuffer_ctrl(NULL)
+, m_splitterhandle(NULL)
 
 , UndoRedoBase (this)
 {
@@ -77,6 +176,7 @@ GLViewer::~GLViewer() {
 	delete m_rregion;
 	delete m_renderer_ctrl;
 	delete m_framebuffer_ctrl;
+	delete m_splitterhandle;
 
 	delete m_fbo;
 	for (int i = 0; i < 4; i++) {
@@ -127,6 +227,9 @@ void GLViewer::parseSceneAndRender(const std::string& iPath)
 				"./images/gloverlay/main_settings_square.png");
 		m_framebuffer_ctrl->setDeleteItemsAtToBackAnim();
 
+		//! splitter handle
+		m_splitterhandle = new GLViewerSplitterHandle(this);
+
 		//init viewer renderer
 		g_renderState = RSTARTED;
 		g_minIterations = 5;
@@ -140,16 +243,19 @@ void GLViewer::parseSceneAndRender(const std::string& iPath)
 #ifndef GFXVIEW
 		this->resizeGL(g_width, g_height);
 #else
-		this->initializeGL();
+		//emit forceresize();
 
+		std::cout << "parse scene and render: " << g_width << ", " << g_height << std::endl;
+
+		this->initializeGL();
 		int tW, tH;
 		tW = g_width;
 		tH = g_height;
 		//g_width = g_width-1;
 		//g_height = g_height-1;
-
 		this->resizeGL (tW, tH);
 		//update();
+
 #endif
 	}
 }
@@ -549,12 +655,12 @@ void GLViewer::initializeGL()	//not used with QGraphicsScene
 {
 	emit init();								//!emit init signal
 
-	//std::cout<<"initializeGL()"<<std::endl;
-	glClearColor(0.25, 0.25, 0.25, 1.0);
-	glDisable(GL_DEPTH_TEST);
 
 	//get a new main qglframebuffer
 	m_fbo = new QGLFramebufferObject(g_width, g_height);
+
+	glClearColor(0.25, 1.0, 0.25, 0.5);
+	glDisable(GL_DEPTH_TEST);
 
 	//rregion PBO setup
 	for (int i = 0; i < 4; i++)	//reset slot buffers
@@ -567,7 +673,6 @@ void GLViewer::initializeGL()	//not used with QGraphicsScene
 		emit verboseStream("OpenGL initialization");
 	}
 }
-;
 
 /////////////////////////////////////////////////////////////////////////////
 // ResizeGL /////////////////////////////////////////////////////////////////
@@ -674,9 +779,6 @@ void GLViewer::resizeGL(int width, int height) {
 									//or on a resize we'l end up with
 									//only the rregion box displayed
 
-	//setup GL state
-	glClearColor(0.25, 0.25, 0.25, 1.0);
-	glDisable(GL_DEPTH_TEST);
 
 	//update buffers
 	if (!m_init_resizing || needaccumreset) {
@@ -704,7 +806,10 @@ void GLViewer::resizeGL(int width, int height) {
 	delete m_fbo;
 	m_fbo = new QGLFramebufferObject(viewer_fb_width, viewer_fb_height);
 
-	//glViewport(0, 0, (GLsizei)m_fb_width, (GLsizei)m_fb_height);
+	//setup GL state
+	glClearColor(0.25, 1.0, 0.25, 0.5);
+	glDisable(GL_DEPTH_TEST);
+	//glViewport(0, 0, (GLsizei)g_width, (GLsizei)g_height);
 
 #ifdef RIGHTHANDLEDCOORDSYS
 	glRasterPos2i(1, 1);
@@ -720,6 +825,9 @@ void GLViewer::resizeGL(int width, int height) {
 		QString str = "Background resize : ";
 		str += QString::number(g_width) + " ";
 		str += QString::number(g_height);
+		//str += "\nGL background resize : ";
+		//str += QString::number(viewer_fb_width) + " ";
+		//str += QString::number(viewer_fb_height);
 		emit verboseStream(str);
 	}
 
@@ -741,6 +849,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 {
 	if (g_renderState == RSTOPPED)
 		return;
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//!< Render accumulation into render framebuffer ////////////////////////
 	double rt;
@@ -758,7 +867,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 	painter->beginNativePainting();
 #endif
 
-
+	/////////////////////////////////////////////////////////////////////////
 	saveGLState();	//!< save GL state
 
 
@@ -791,9 +900,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 
 		glRasterPos2i(
 #ifdef RIGHTHANDLEDCOORDSYS
-				g_width
-						- (woffset != 0 ?
-								0 : ((m_fb_woffset * 2) + m_fb_oddoffset_x)),
+				g_width - (woffset != 0 ? 0 : ((m_fb_woffset * 2) + m_fb_oddoffset_x)),
 #else
 				0,
 #endif
@@ -807,7 +914,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 		 }*/
 
 		//!> draw render fb to GL framebuffer
-		glDrawPixels((GLsizei) m_fb_width, (GLsizei) m_fb_height, GL_RGB, GL_FLOAT, ptr);
+		glDrawPixels ((GLsizei) m_fb_width, (GLsizei) m_fb_height, GL_RGB, GL_FLOAT, ptr);
 
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 		glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -816,10 +923,8 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 		m_fbo->release();
 
 		//draw full GL fb to the screen
-		m_fbo->drawTexture(
-				QPoint(m_fb_woffset <= 0 ? 0 : m_fb_woffset,
-						m_fb_hoffset <= 0 ? 0 : m_fb_hoffset), m_fbo->texture(),
-				GL_TEXTURE_2D);
+		m_fbo->drawTexture(	QPoint(m_fb_woffset <= 0 ? 0 : m_fb_woffset, m_fb_hoffset <= 0 ? 0 : m_fb_hoffset),
+							m_fbo->texture(), GL_TEXTURE_2D );
 	}
 
 	//RenderRegion
@@ -913,10 +1018,8 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 		}
 
 		//draw main fb to the screen
-		m_fbo->drawTexture(
-				QPoint(m_fb_woffset <= 0 ? 0 : m_fb_woffset,
-						m_fb_hoffset <= 0 ? 0 : m_fb_hoffset), m_fbo->texture(),
-				GL_TEXTURE_2D);
+		m_fbo->drawTexture(	QPoint(m_fb_woffset <= 0 ? 0 : m_fb_woffset, m_fb_hoffset <= 0 ? 0 : m_fb_hoffset),
+							m_fbo->texture(), GL_TEXTURE_2D );
 
 		//draw saved fb portion on top
 		if (m_rr_pbo_available && !m_rregion->isPainting()) {
@@ -970,7 +1073,10 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 		update();
 
 
+	/////////////////////////////////////////////////////////////////////////
 	restoreGLState();	//!< restore GL state for QPainter //////////////////
+
+
 
 	//!< Painter overlay ////////////////////////////////////////////////////
 #ifndef GFXVIEW

@@ -36,6 +36,7 @@ class OverlayItemsController;
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Undo/Redo -- TO BE MOVED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 class UndoRedo : public QObject
@@ -74,12 +75,103 @@ public:
 	{
 		m_undoredo->connectDevice (iSettingCtrl);
 	}
+
 private:
 	UndoRedo * m_undoredo;
 };
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GLSplitter;
+class GLSplitterHandle : public QSplitterHandle
+{
+	friend GLSplitter;
+public:
+	GLSplitterHandle (Qt::Orientation orientation, QSplitter *parent = 0) : QSplitterHandle (orientation,parent){}
+	void paintEvent (QPaintEvent *event)
+	{
+		QPainter painter(this);
+		//if (orientation() == Qt::Horizontal)
+
+		QRect iRect (QPoint(this->width()-32,0), QPoint(this->width()-48,this->height()+12));
+		//painter.fillRect(event->rect(), QColor(200,200,0));
+		painter.fillRect(iRect, QColor(200,200,0));
+	}
+	void mousePressEvent(QMouseEvent * e)
+	{
+		QMouseEvent *me = (QMouseEvent *) e;
+		int x = me->pos().x();
+		int y = me->pos().y();
+		std::cout << "GLSplitterHandle->MousePress-> x:" << this->width() << ", y:" << this->height() << std::endl;
+	}
+	void mouseMoveEvent(QMouseEvent * e)
+	{
+		QSplitterHandle::mouseMoveEvent (e);
+		//std::cout << "GLSplitterHandle->MouseMove" << std::endl;
+	}
+	void mouseReleaseEvent(QMouseEvent * e)
+	{
+		QSplitterHandle::mouseReleaseEvent (e);
+		//std::cout << "GLSplitterHandle->MouseRelease" << std::endl;
+	}
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GLSplitter : public QSplitter
+{
+	Q_OBJECT
+public:
+	GLSplitter () : QSplitter (), m_splitterhandle(NULL){};
+	GLSplitter (Qt::Orientation orientation, QWidget *parent = 0) : QSplitter (orientation,parent), m_splitterhandle(NULL){};
+	~GLSplitter (){ if(m_splitterhandle) delete m_splitterhandle; }
+
+public slots:
+	void splitting(int y) {
+		//std::cout << "GLSplitter->splitting slot " << y << std::endl;
+		if(m_splitterhandle) m_splitterhandle->moveSplitter(y);
+	}
+
+protected:
+	QSplitterHandle * createHandle()
+	{
+		m_splitterhandle = new GLSplitterHandle (orientation(), this);
+		return m_splitterhandle;
+	}
+private:
+	GLSplitterHandle * m_splitterhandle;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GLViewerSplitterHandle : public IGLViewerDevice
+{
+	Q_OBJECT
+public:
+	GLViewerSplitterHandle (GLViewer *widget);
+	~GLViewerSplitterHandle (){}
+
+	void registerDevice ();
+    void paint (QPainter* iPainter);
+
+public slots:
+	void viewerInit (){}
+	void viewerResized ();
+	void viewerPaint (QPainter* iPainter) { this->paint(iPainter); }
+	void viewerUndoRedo (int id, int slot, QVariant idata){}
+
+protected:
+    bool eventFilter (QObject *object, QEvent *event);
+
+private:
+    bool m_isdragging;
+    QRect m_qpix_rect;
+    GLViewer * m_widget;
+};
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class GLViewer :
 #ifndef GFXVIEW
@@ -90,6 +182,7 @@ class GLViewer :
   public UndoRedoBase
 {
 	Q_OBJECT
+	friend GLViewerSplitterHandle;
 
 public:
 	GLViewer ( int argc, char *argv[] );
@@ -97,28 +190,34 @@ public:
 
 #ifdef GFXVIEW
 	friend RenderGLView;
+
 	bool isSceneReady()
     {
     	if( g_renderState==RSTOPPED && g_minIterations==0)
     		return false;
     	else return true;
     }
+
 	void forceRepaint ()
 	{
-		QGraphicsView * parentView = this->views()[0];
+		/*RenderGLView * parentView = qobject_cast<RenderGLView*>(this->views()[0]);
+		//QGraphicsView * parentView = this->views()[0];
 		if(parentView)
 		{
-			std::cout << "GLViewer->force repainting: " << this->sceneRect().height() << ", " << this->sceneRect().width() << std::endl;
-			/*QWidget * viewport = parentView->viewport();
-			viewport->update();*/
+			std::cout << "GLViewer->force repainting: " << this->sceneRect().width() << ", " << this->sceneRect().height() << std::endl;
+			//QWidget * viewport = parentView->viewport();
+			//viewport->update();
 			//parentView->scene()->update(this->sceneRect());
 			parentView->invalidateScene();
 			parentView->scene()->update();
 			//this->invalidate();
+
+			QSize tempSize (this->sceneRect().width(), this->sceneRect().height());
+			parentView->resizeEvent(new QResizeEvent(tempSize,tempSize));
 		}else
 		{
 			std::cout << "GLViewer->failed getting parent scene" << std::endl;
-		}
+		}*/
 	}
 #endif
 
@@ -263,9 +362,14 @@ signals:
 	void verboseStream(QString);
 	void rendererStatus(int);
 
+	void splitterMoved(int);
+
 	void init ();
 	void resized ();
 	void painting (QPainter*);
+#ifdef GFXVIEW
+	void forceresize ();
+#endif
 
 public slots:
 	void parseSceneAndRender(const std::string&);
@@ -387,6 +491,9 @@ private:
 
 	// framebuffer controls
 	OverlayItemsController * m_framebuffer_ctrl;
+
+	//
+	GLViewerSplitterHandle * m_splitterhandle;
 };
 
 

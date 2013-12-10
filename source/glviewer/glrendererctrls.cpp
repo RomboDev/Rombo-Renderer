@@ -372,11 +372,11 @@ void OverlayCameraSettingsItem::drawInstructions(QPainter *painter, int context,
 
 	painter->setRenderHint(QPainter::TextAntialiasing);
 	painter->fillRect(QRect(0, height, width, rect.height() + 2*border), defCol);
-	painter->setPen(Qt::white);
+	painter->setPen(Qt::lightGray);
 	painter->fillRect(QRect(0, 0, width, rect.height() + 2*border), defCol);
 
 	painter->setFont (nfFont);
-	painter->drawText((width - rect.width())/2, border,
+	painter->drawText((width - rect.width())/2, border+2,
 				   rect.width(), rect.height(),
 				   Qt::AlignCenter | Qt::TextWordWrap, text);
 }
@@ -419,7 +419,7 @@ void OverlayCameraSettingsItem::paint(QPainter* iPainter)
 		//draw screen rectangle
 		QRect screenRect;
 		screenRect.setTopLeft(QPoint(1, 1));
-		screenRect.setBottomRight(QPoint(width,height));
+		screenRect.setBottomRight(QPoint(width,height-1));
 
 		QPen pen;
 		pen.setColor (QColor(61,166,244));

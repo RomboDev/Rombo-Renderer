@@ -983,7 +983,7 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 	{
 		//draw above stuff
 		iPainter->setBrush (QColor(34, 34, 34));	//base slider track
-		iPainter->setPen (Qt::white);
+		iPainter->setPen (OverlayItemsController::fgColor);
 		iPainter->drawRect (m_bslider_rect);
 
 		int zeroval = 0;
@@ -1013,7 +1013,7 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 		iPainter->setPen (Qt::NoPen);
 		iPainter->drawRect (m_activefield_rect);
 
-		iPainter->setBrush (Qt::white);				//slider cursor
+		iPainter->setBrush (QColor(OverlayItemsController::fgColor));				//slider cursor
 		iPainter->drawRect (m_scursor_rect);
 		iPainter->setBrush (Qt::NoBrush);
 	}
@@ -1023,7 +1023,7 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 		iPainter->setBrush (QColor(34, 34, 34));//numerical field
 	else
 		iPainter->setBrush (QColor(250, 250, 250));
-	iPainter->setPen (Qt::white);
+	iPainter->setPen (OverlayItemsController::fgColor);
 	iPainter->drawRect (m_numfield_rect);
 
 	//numerical field text ////////////////////////////////////////////////////////
@@ -1032,7 +1032,7 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 	nfFont.setPixelSize( 12 );
 	if(!m_numpad_clicked)
 	{
-		iPainter->setPen (Qt::white);
+		iPainter->setPen (OverlayItemsController::fgColor);
 	}
 	else
 	{
@@ -1086,7 +1086,7 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 	pFont.setBold (true);
 	iPainter->setFont( pFont );
 
-	iPainter->setPen (Qt::white);
+	iPainter->setPen (OverlayItemsController::fgColor);
 	//QString pText = tr("Min. Contribution");
 	iPainter->drawText (getCurrentPos().left()+WOFFSET,
 						getCurrentPos().top()+22,
@@ -2112,9 +2112,7 @@ void OverlayItemsController::anim_ctrl()
 			m_ctrls.clear();
 			m_host_ctrls = NULL;
 		}
-#ifdef GFXVIEW
-		//getParentWidget()->forceRepaint();
-#endif
+
 	}else
 	{												//!< elapsed time
 		m_elapsed = (m_elapsed + qobject_cast<QTimer*>(sender())->interval()) % ANIMTIME;

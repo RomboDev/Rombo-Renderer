@@ -17,6 +17,7 @@ HEADERS   += source/rombo.h \
 SOURCES   += source/main.cpp \
     		source/rombo.cpp \
     		source/renderdevice.cpp \
+    		source/glmanager.cpp \
     		source/glviewer.cpp \
 		    source/glviewer/glrendercamera.cpp \
 		    source/glviewer/glrenderregion.cpp \
