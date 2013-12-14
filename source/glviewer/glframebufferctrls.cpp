@@ -54,7 +54,7 @@ bool OverlayFramebufferCtrlsBuilder::buildItems (	OverlayItemsController * const
 	iItems->push_back (hmItem);
 
 	OverlayButtonItem * h2mItem = new OverlayButtonItem (iFactory, 3);
-	h2mItem->setBckPixmaps (	"./images/gloverlay/button_SQ_XL_base.png",
+	h2mItem->setBckPixmaps ("./images/gloverlay/button_SQ_XL_base.png",
 							"./images/gloverlay/button_SQ_XL_over.png",
 							"./images/gloverlay/x_icon.png");
 	h2mItem->setClickedPixmap (	"./images/gloverlay/x_clicked.png");
@@ -65,7 +65,7 @@ bool OverlayFramebufferCtrlsBuilder::buildItems (	OverlayItemsController * const
 	iItems->push_back (h2mItem);
 
 	OverlayBoolItem * h3mItem = new OverlayBoolItem (iFactory, 4);
-	h3mItem->setBckPixmaps (	"./images/gloverlay/button_SQ_XL_base.png",
+	h3mItem->setBckPixmaps ("./images/gloverlay/button_SQ_XL_base.png",
 							"./images/gloverlay/button_SQ_XL_over.png",
 							"./images/gloverlay/x_icon.png");
 	h3mItem->setClickedPixmap (	"./images/gloverlay/x_clicked.png");
@@ -76,7 +76,7 @@ bool OverlayFramebufferCtrlsBuilder::buildItems (	OverlayItemsController * const
 	iItems->push_back (h3mItem);
 
 	OverlayBoolItem * h4mItem = new OverlayBoolItem (iFactory, 5);
-	h4mItem->setBckPixmaps (	"./images/gloverlay/button_SQ_XL_base.png",
+	h4mItem->setBckPixmaps ("./images/gloverlay/button_SQ_XL_base.png",
 							"./images/gloverlay/button_SQ_XL_over.png",
 							"./images/gloverlay/x_icon.png");
 	h4mItem->setClickedPixmap (	"./images/gloverlay/x_clicked.png");
@@ -100,8 +100,8 @@ bool OverlayFramebufferCtrlsBuilder::buildItems (	OverlayItemsController * const
 	OverlayNavigatorItem * navItem = new OverlayNavigatorItem (iFactory, 7);
 	navItem->setBckPixmaps ("./images/gloverlay/quad70x70.png");
 
-	navItem->setPosition (QRect (iPos+82, h, 140, 140));
-	navItem->setPositionEnd (QRect (iPos +82+172+35+172 +35, h, 140, 140) );
+	navItem->setPosition (QRect (iPos+82, h, 70, 70));
+	navItem->setPositionEnd (QRect (iPos +82+172+35+172 +35, h, 70, 70) );
 	navItem->setOpacity (0.0f);
 
 	//connection to setup item once anim finished

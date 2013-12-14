@@ -18,6 +18,8 @@ void UndoRedo::connectDevice (OverlayItemsController* iSettingCtrl)
 GLViewerSplitterHandle::GLViewerSplitterHandle (GLViewer *widget) : m_widget(widget), m_isdragging(false)
 {
 	registerDevice ();
+
+	m_qpix = new QPixmap ("./images/gloverlay/main_snapshot_handle.png");
 }
 void GLViewerSplitterHandle::registerDevice ()
 {
@@ -35,11 +37,17 @@ void GLViewerSplitterHandle::registerDevice ()
 }
 void GLViewerSplitterHandle::paint (QPainter* iPainter)
 {
-	iPainter->fillRect(m_qpix_rect, QColor(200,200,0));
+	//iPainter->fillRect(m_qpix_rect, QColor(200,200,0));
+	if(m_qpix){
+		iPainter->setOpacity (0.6);
+		iPainter->drawPixmap (m_qpix_rect, *m_qpix);
+		iPainter->setOpacity (1.0);
+	}
 }
 void GLViewerSplitterHandle::viewerResized ()
 {
-	m_qpix_rect = QRect (QPoint(m_widget->width()-32,m_widget->height()-24), QPoint(m_widget->width()-48,m_widget->height()));
+	m_qpix_rect = QRect (	QPoint(m_widget->width()-64,m_widget->height()-48),
+							QPoint(m_widget->width()-16,m_widget->height()) );
 }
 bool GLViewerSplitterHandle::eventFilter (QObject *object, QEvent *event)
 {
@@ -222,9 +230,8 @@ void GLViewer::parseSceneAndRender(const std::string& iPath)
 		m_framebuffer_ctrl = new OverlayFramebufferCtrls(this);
 		m_framebuffer_ctrl->setItemsHasNoSubItems();
 		m_framebuffer_ctrl->setLayout(OverlayItemsController::TOPLEFT);
-		m_framebuffer_ctrl->setItemsStartingPos(28);
-		m_framebuffer_ctrl->setBckPixmaps(
-				"./images/gloverlay/main_settings_square.png");
+		m_framebuffer_ctrl->setItemsStartingPos(18);
+		m_framebuffer_ctrl->setBckPixmaps( "./images/gloverlay/main_settings_square.png" );
 		m_framebuffer_ctrl->setDeleteItemsAtToBackAnim();
 
 		//! splitter handle

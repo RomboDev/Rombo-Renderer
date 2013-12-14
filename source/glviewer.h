@@ -91,12 +91,12 @@ public:
 	GLSplitterHandle (Qt::Orientation orientation, QSplitter *parent = 0) : QSplitterHandle (orientation,parent){}
 	void paintEvent (QPaintEvent *event)
 	{
-		QPainter painter(this);
+		//QPainter painter(this);
 		//if (orientation() == Qt::Horizontal)
 
-		QRect iRect (QPoint(this->width()-32,0), QPoint(this->width()-48,this->height()+12));
+		//QRect iRect (QPoint(this->width()-32,0), QPoint(this->width()-48,this->height()+12));
 		//painter.fillRect(event->rect(), QColor(200,200,0));
-		painter.fillRect(iRect, QColor(200,200,0));
+		//painter.fillRect(iRect, QColor(200,200,0));
 	}
 	void mousePressEvent(QMouseEvent * e)
 	{
@@ -148,7 +148,7 @@ class GLViewerSplitterHandle : public IGLViewerDevice
 	Q_OBJECT
 public:
 	GLViewerSplitterHandle (GLViewer *widget);
-	~GLViewerSplitterHandle (){}
+	~GLViewerSplitterHandle () { if(m_qpix) delete m_qpix; }
 
 	void registerDevice ();
     void paint (QPainter* iPainter);
@@ -165,6 +165,7 @@ protected:
 private:
     bool m_isdragging;
     QRect m_qpix_rect;
+    QPixmap * m_qpix;
     GLViewer * m_widget;
 };
 

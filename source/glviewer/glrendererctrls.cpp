@@ -262,7 +262,7 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 
 	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
 
-	// center focus buttons
+	// center center button
 	OverlayButtonItem * bmItem = new OverlayButtonItem (iFactory, 0);
 	bmItem->setBckPixmaps (	"./images/gloverlay/button_HL_base.png",
 							"./images/gloverlay/button_HL_over.png",
@@ -274,11 +274,12 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 	bmItem->setOpacity (0.0f);
 	iSubitems->push_back (bmItem);
 
+	// center focus button
 	OverlayButtonItem * cmItem = new OverlayButtonItem (iFactory, 1);
 	cmItem->setBckPixmaps (	"./images/gloverlay/button_HL_base.png",
 							"./images/gloverlay/button_HL_over.png",
-							"./images/gloverlay/camera_center_icon.png");
-	cmItem->setClickedPixmap (	"./images/gloverlay/camera_center_clicked.png");
+							"./images/gloverlay/camera_focus_icon.png");
+	cmItem->setClickedPixmap (	"./images/gloverlay/camera_focus_clicked.png");
 	cmItem->setParamName ("Pick Focus");
 	cmItem->setPosition (QRect (iPos+82, h, 120, 33));
 	cmItem->setPositionEnd (QRect (iPos +82, h+37, 120, 33) );
@@ -298,7 +299,7 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 	iSubitems->push_back (hmItem);
 
 	OverlayButtonItem * h2mItem = new OverlayButtonItem (iFactory, 3);
-	h2mItem->setBckPixmaps (	"./images/gloverlay/button_SQ_XL_base.png",
+	h2mItem->setBckPixmaps ("./images/gloverlay/button_SQ_XL_base.png",
 							"./images/gloverlay/button_SQ_XL_over.png",
 							"./images/gloverlay/camera_pan_icon.png");
 	h2mItem->setClickedPixmap (	"./images/gloverlay/camera_pan_clicked.png");
@@ -309,7 +310,7 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 	iSubitems->push_back (h2mItem);
 
 	OverlayButtonItem * h3mItem = new OverlayButtonItem (iFactory, 4);
-	h3mItem->setBckPixmaps (	"./images/gloverlay/button_SQ_XL_base.png",
+	h3mItem->setBckPixmaps ("./images/gloverlay/button_SQ_XL_base.png",
 							"./images/gloverlay/button_SQ_XL_over.png",
 							"./images/gloverlay/camera_zoom_icon.png");
 	h3mItem->setClickedPixmap (	"./images/gloverlay/camera_zoom_clicked.png");
@@ -320,7 +321,7 @@ bool OverlayCameraSettingsBuilder::buildItems ( OverlayItemsController * const& 
 	iSubitems->push_back (h3mItem);
 
 	OverlayButtonItem * h4mItem = new OverlayButtonItem (iFactory, 5);
-	h4mItem->setBckPixmaps (	"./images/gloverlay/button_SQ_XL_base.png",
+	h4mItem->setBckPixmaps ("./images/gloverlay/button_SQ_XL_base.png",
 							"./images/gloverlay/button_SQ_XL_over.png",
 							"./images/gloverlay/camera_roll_icon.png");
 	h4mItem->setClickedPixmap (	"./images/gloverlay/camera_roll_clicked.png");
@@ -763,15 +764,15 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
 {
 	iFactory->setActiveDevice (OverlayItemsController::MAINCONTROLLER);
 
-	int h = iFactory->getParentWidget()->getWidgetHeight()-78;
-
+	int h = iFactory->getParentWidget()->getWidgetHeight()-78; //78
+	int hOffser = iPos + 44;
 
     //!< Renderer settings
     OverlayRendererSettingsItem * tmItem = new OverlayRendererSettingsItem (iFactory, 0,
 												new OverlayRenderSettingsBuilder(),
 												QRect (iPos, h, 80, 70),
-												QRect (112, h, 80, 70),
-												QRect (114, h, 80, 70) );
+												QRect (hOffser, h, 80, 70),
+												QRect (hOffser, h, 80, 70) );
     tmItem->setBckPixmaps (	"./images/gloverlay/bck_base.png",
 							"./images/gloverlay/bck_over.png",
 							"./images/gloverlay/renderer_icon.png");
@@ -783,8 +784,8 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
     OverlayCameraSettingsItem * bmItem = new OverlayCameraSettingsItem (iFactory, 1,
 												new OverlayCameraSettingsBuilder(),
 												QRect (iPos, h, 80, 70),
-												QRect (112+82, h, 80, 70),
-												QRect (114, h, 80, 70) );
+												QRect (hOffser+82, h, 80, 70),
+												QRect (hOffser, h, 80, 70) );
     bmItem->setBckPixmaps (	"./images/gloverlay/bck_base.png",
 							"./images/gloverlay/bck_over.png",
 							"./images/gloverlay/camera_icon.png");
@@ -796,8 +797,8 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
     OverlayTonemapperSettingsItem * xmItem = new OverlayTonemapperSettingsItem (iFactory, 2,
 												new OverlayTonemapperSettingsBuilder(),
 												QRect (iPos, h, 80, 70),
-												QRect (112+82+82, h, 80, 70),
-												QRect (94, h, 80, 70) );
+												QRect (hOffser+82+82, h, 80, 70),
+												QRect (hOffser, h, 80, 70) );
     xmItem->setBckPixmaps (	"./images/gloverlay/bck_base.png",
 							"./images/gloverlay/bck_over.png",
 							"./images/gloverlay/tonemapper_icon.png");
@@ -811,8 +812,8 @@ bool OverlayRendererCtrlsBuilder::buildItems (	OverlayItemsController * const& i
 							"./images/gloverlay/bck_over.png",
 							"./images/gloverlay/environment_icon.png");
     wmItem->setPosition (QRect (iPos, h, 80, 70));
-    wmItem->setPositionEnd (QRect (112+82+82+82, h, 80, 70) );
-    wmItem->setPositionAlone(	QRect (174, h, 80, 70));
+    wmItem->setPositionEnd (QRect (hOffser+82+82+82, h, 80, 70) );
+    wmItem->setPositionAlone(	QRect (hOffser, h, 80, 70));
     wmItem->setOpacity (0.0f);
     iItems->push_back (wmItem);
 

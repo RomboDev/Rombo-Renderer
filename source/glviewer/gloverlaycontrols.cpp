@@ -252,7 +252,7 @@ void OverlayAnimSubItem::animateLonely (float iTimeElapsed)
 	if(iTimeElapsed>=0.2f)
 		setLastPos (getCurrentPos());
 
-	setOpacity (1.0f);
+	setOpacity (0.6f);
 }
 
 void OverlayAnimSubItem::finalizeSubitems ()
@@ -429,11 +429,11 @@ void OverlayNumericPadDigit::paint (QPainter* iPainter)
 	{
 		iPainter->setRenderHint(QPainter::TextAntialiasing);
 		QFont pFont("Arial");
-		pFont.setPixelSize( 12 );
+		pFont.setPixelSize( 11 );
 		pFont.setBold (true);
 
 		iPainter->setFont( pFont );
-		iPainter->setPen (Qt::white);
+		iPainter->setPen (OverlayItemsController::fgColor);
 
 		if (m_digit=='0')
 		{
@@ -842,6 +842,7 @@ OverlaySliderItem::OverlaySliderItem (OverlayItemsController * iFactory, int iID
   m_override_cur_once (true), m_restore_cur_once (false),
   m_over_cursor (false), m_draggin_cursor (false),
   m_has_slider (true), m_show_numpad (true), m_force_repaint (false),
+  m_qpix_handle(NULL),
   m_databinder(iDatabinder), m_data(0), m_decdigits (0), m_vrange(QPoint(0,0)), m_dec_inv_pow (1)
 {
 	//set default bck pixmap
@@ -849,6 +850,8 @@ OverlaySliderItem::OverlaySliderItem (OverlayItemsController * iFactory, int iID
 		setBckPixmaps (	"./images/gloverlay/slider_num_bck.png");
 	else
 		setBckPixmaps (	"./images/gloverlay/slider_bck.png");
+
+	m_qpix_handle = new QPixmap ("./images/gloverlay/slider_handle.png");;
 }
 
 int OverlaySliderItem::getXSliderFromValue (int val, bool toInt)
@@ -922,7 +925,7 @@ void OverlaySliderItem::buildNumericPad ()
 		m_num_pad->setPosition (QRect (m_numfield_rect.left()+(m_numfield_rect.width()/2)-71,
 								m_numfield_rect.top()-162,
 								143, 150));
-		m_num_pad->setOpacity (0.8);
+		m_num_pad->setOpacity (0.52);
 
 		m_num_pad->setFormat (	this->hasNegativeRange(),
 								this->hasDecimals(),
@@ -939,7 +942,7 @@ void OverlaySliderItem::buildNumericPad ()
 
 
 
-		connect (m_num_pad, SIGNAL (dataChanged(int)), this, SLOT (dataPadChanged(int)));
+		connect (m_num_pad, SIGNAL (dataChanged(int)), 		this, SLOT (dataPadChanged(int)));
 		connect (m_num_pad, SIGNAL (dataChanging(int,int)), this, SLOT (dataPadChanging(int,int)));
 
 		//connect (this, SIGNAL (dataChanged(int,int,int)), this, SLOT (updatePadData(int,int,int)));
@@ -982,9 +985,9 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 	if(m_has_slider)
 	{
 		//draw above stuff
-		iPainter->setBrush (QColor(34, 34, 34));	//base slider track
-		iPainter->setPen (OverlayItemsController::fgColor);
-		iPainter->drawRect (m_bslider_rect);
+		//iPainter->setBrush (QColor(34, 34, 34));	//base slider track
+		//iPainter->setPen (OverlayItemsController::fgColor);
+		//iPainter->drawRect (m_bslider_rect);
 
 		int zeroval = 0;
 		if(m_vrange.x()>0) zeroval=m_vrange.x();
@@ -992,40 +995,55 @@ void OverlaySliderItem::paint (QPainter* iPainter)
 		int scX = m_scursor_rect.center().x();
 		if(scX<acX)
 		{
-			QPoint ppTopLeft 		(scX, m_bslider_rect.top()+1);
-			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()+0);
+			QPoint ppTopLeft 		(scX+4, m_bslider_rect.top()+4);
+			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()-4);
 			m_activefield_rect = QRect (ppTopLeft, ppBottomRight);
 		}
 		else if (scX>acX)
 		{
-			QPoint ppTopLeft 		(acX, m_bslider_rect.top()+1);
-			QPoint ppBottomRight 	(scX, m_bslider_rect.bottom()+0);
+			QPoint ppTopLeft 		(acX+4, m_bslider_rect.top()+4);
+			QPoint ppBottomRight 	(scX, m_bslider_rect.bottom()-4);
 			m_activefield_rect = QRect (ppTopLeft, ppBottomRight);
 		}
 		else if (scX==acX)
 		{
-			QPoint ppTopLeft 		(acX, m_bslider_rect.top()+1);
-			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()+0);
+			QPoint ppTopLeft 		(acX+4, m_bslider_rect.top()+4);
+			QPoint ppBottomRight 	(acX, m_bslider_rect.bottom()-4);
 			m_activefield_rect = QRect (ppTopLeft, ppBottomRight);
 		}
 
 		iPainter->setBrush (QColor(61, 166, 244));
 		iPainter->setPen (Qt::NoPen);
+		iPainter->setOpacity(0.9);
 		iPainter->drawRect (m_activefield_rect);
+		iPainter->setOpacity(1.0);
 
-		iPainter->setBrush (QColor(OverlayItemsController::fgColor));				//slider cursor
-		iPainter->drawRect (m_scursor_rect);
-		iPainter->setBrush (Qt::NoBrush);
+		//iPainter->setBrush (QColor(OverlayItemsController::fgColor));				//slider cursor
+		//iPainter->drawRect (m_scursor_rect);
+		//iPainter->setBrush (Qt::NoBrush);
+
+		if(m_qpix_handle)
+		{
+			//QRect iHandleRect ( QPoint((int)m_scursor_rect.topLeft().x(),(int)m_scursor_rect.topLeft().y()),
+			//					QPoint((int)m_scursor_rect.bottomRight().x(),(int)m_scursor_rect.bottomRight().y()) );
+			int offset = 11;
+			QPoint cursorP (m_scursor_rect.center().x(), m_scursor_rect.center().y());
+			QRect iHandleRect ( QPoint((int)cursorP.x()-offset,(int)cursorP.y()-offset),
+								QPoint((int)cursorP.x()+offset,(int)cursorP.y()+offset) );
+
+			iPainter->setOpacity(0.88);
+			iPainter->drawPixmap (iHandleRect, *m_qpix_handle);
+			iPainter->setOpacity(1.0);
+		}
 	}
-
 	//numerical field bck /////////////////////////////////////////////////////////
-	if(!m_numpad_clicked)
+/*	if(!m_numpad_clicked)
 		iPainter->setBrush (QColor(34, 34, 34));//numerical field
 	else
 		iPainter->setBrush (QColor(250, 250, 250));
 	iPainter->setPen (OverlayItemsController::fgColor);
 	iPainter->drawRect (m_numfield_rect);
-
+*/
 	//numerical field text ////////////////////////////////////////////////////////
 	iPainter->setRenderHint(QPainter::TextAntialiasing);
 	QFont nfFont("Arial");
@@ -1360,7 +1378,7 @@ void OverlayButtonItem::paint (QPainter* iPainter)
 		QFont nfFont("Arial");
 		nfFont.setPixelSize( 12 );
 		iPainter->setFont( nfFont );
-		iPainter->setPen (Qt::white);
+		iPainter->setPen (OverlayItemsController::fgColor);
 
 		iPainter->drawText (getCurrentPos().left()+32,
 							getCurrentPos().top()+21,
@@ -1395,7 +1413,7 @@ bool OverlayButtonItem::eventFilter (QObject *object, QEvent *event)
 			int y = me->scenePos().y();
 #endif
 
-			if (getCurrentPos().intersects (QRect(x, y, 1, 1)))	//over whole item rect
+			if (getCurrentPos().contains (x, y))	//over whole item rect
 			{
 				setIsActive (!isActive());
 				emit button_pressed (isActive(), getID());
@@ -1456,7 +1474,7 @@ bool OverlayBoolItem::eventFilter (QObject *object, QEvent *event)
 			int y = me->scenePos().y();
 #endif
 
-			if (getCurrentPos().intersects (QRect(x, y, 1, 1)))	//over whole item rect
+			if (getCurrentPos().contains (x, y))	//over whole item rect
 			{
 				m_bool_data = !m_bool_data;
 				emit button_pressed (m_bool_data, getID());
@@ -1603,13 +1621,14 @@ void OverlayNavigatorItem::paint (QPainter* iPainter)
 	OverlayAnimItem::paint (iPainter);
 
 	//draw subregion rect
-	//qreal oOpacity = iPainter->opacity();
-	//iPainter->setOpacity (0.4);
-	iPainter->setBrush (QColor(250,55,55,100)/*Qt::darkGray*/);
-	iPainter->setPen (QColor(255,255,255,100)/*Qt::white*/);
+	qreal oOpacity = iPainter->opacity();
+	iPainter->setOpacity (0.6);
+	//iPainter->setBrush (QColor(250,55,55,100)/*Qt::darkGray*/);
+	iPainter->setBrush (QColor(OverlayItemsController::cyanColor));
+	iPainter->setPen (OverlayItemsController::fgColor);
 
 	iPainter->drawRect (m_subregion);
-	//iPainter->setOpacity (oOpacity);
+	iPainter->setOpacity (oOpacity);
 }
 
 bool OverlayNavigatorItem::eventFilter (QObject *object, QEvent *event)
@@ -2005,19 +2024,22 @@ void OverlayItemsController::installEventFilter (OverlayItem* iItem) { m_widget-
 
 void OverlayItemsController::setPositionFromLayout (int ilay)
 {
+	int hOffset = 0;
+	int vOffset = 56;
+	int iSize = 48;
 	switch (m_layout_type)
 	{
 	case BOTTOMLEFT :
-		m_qpix_rect = QRect (8, m_widget->getWidgetHeight()-56, 48, 48);
+		m_qpix_rect = QRect (hOffset, m_widget->getWidgetHeight()-vOffset, iSize, iSize);
 		break;
 	case BOTTOMRIGHT :
-		m_qpix_rect = QRect (m_widget->getWidgetWidth() -8, m_widget->getWidgetHeight()-56, 48, 48);
+		m_qpix_rect = QRect (m_widget->getWidgetWidth() -hOffset, m_widget->getWidgetHeight()-vOffset, iSize, iSize);
 		break;
 	case TOPLEFT :
-		m_qpix_rect = QRect (8, 8, 48, 48);
+		m_qpix_rect = QRect (hOffset, 8, iSize, iSize);
 		break;
 	case TOPRIGHT :
-		m_qpix_rect = QRect (m_widget->getWidgetWidth() -8, 56, 48, 48);
+		m_qpix_rect = QRect (m_widget->getWidgetWidth() -hOffset, vOffset, iSize, iSize);
 		break;
 	}
 }

@@ -94,7 +94,7 @@ public:
     void setIsActive (bool active) { m_is_active = active; }
     bool isActive () const { return m_is_active; }
 
-    void setIsDimmed (bool idim) { m_is_dimmed = idim; m_is_dimmed==true? m_opacity=0.8: m_opacity=1.0;}
+    void setIsDimmed (bool idim) { m_is_dimmed = idim; m_is_dimmed==true? m_opacity=0.8: m_opacity=1.0; }
     bool isDimmed () const { return m_is_dimmed; }
 
     int isHidden () const { return m_is_hidden; }
@@ -107,7 +107,7 @@ public:
     																//only there we deal with m_end_opacity
     																//this->paint() uses the m_opacity
     																if(iEndOpacity!=-1) m_end_opacity = iEndOpacity;
-    																else m_end_opacity = 0.8; /*force not fully opaque*/}
+    																else m_end_opacity = 0.52; /*force not fully opaque*/}
     qreal getOpacity () const { return m_opacity; }
     qreal getEndOpacity () const { return m_end_opacity; }
 
@@ -475,7 +475,7 @@ class OverlaySliderItem: public OverlayAnimItem
 	Q_OBJECT
 public:
 	OverlaySliderItem (OverlayItemsController * iFactory, int iID, OverlayItemDataBinder* iDatabinder=NULL, int iType=OverlayItemTypeEnum::SLIDERTYPE);
-	~OverlaySliderItem () { if (m_num_pad!=NULL) clearNumericPad(); if(m_databinder) delete m_databinder;}
+	~OverlaySliderItem () { if (m_num_pad!=NULL) clearNumericPad(); if(m_databinder) delete m_databinder; if(m_qpix_handle)delete m_qpix_handle; }
 
 	void setData (const QString& iparamname, int idata, const QPoint& irange, int idecdigits=0)
 	{
@@ -502,7 +502,7 @@ public:
 	bool cursorIsDraggin () const { return m_draggin_cursor; }
 
 	//
-	void setHasNoSlider (bool ihasslider=false) { m_has_slider = ihasslider; }
+	void setHasNoSlider (bool ihasslider=false) { m_has_slider = ihasslider; setBckPixmaps (	"./images/gloverlay/slider_num_bck.png"); }
 	void setHasNoNumPad (bool ishowpad=false) { m_show_numpad = ishowpad; }
 
 signals:
@@ -629,6 +629,8 @@ private:
     int m_decdigits;
     QPoint m_vrange;
     float m_dec_inv_pow;
+
+    QPixmap * m_qpix_handle;
 
     OverlayItemDataBinder* m_databinder;
 };
@@ -759,7 +761,8 @@ public:
 
     enum CTRLCOLORS
     {
-    	fgColor = 0xcccccc
+    	fgColor = 0xcccccc,
+    	cyanColor = 0x3da6f4
     };
 
 
@@ -800,7 +803,6 @@ signals:
 	void undo_redo_items (int id, QVariant idata);
 
 protected:
-
     enum ANIMTIME
     {
 		ANINSTEP = 20,
