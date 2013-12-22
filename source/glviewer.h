@@ -30,6 +30,8 @@ class RenderGLView;
 #include "glviewer/glrenderregion.h"
 #include "glviewer/gloverlaycontrols.h"
 
+#include "glviewer/snapshot/snapshotsviewer.h"
+
 class RenderCamera;
 class RenderRegion;
 class OverlayItemsController;
@@ -88,57 +90,67 @@ class GLSplitterHandle : public QSplitterHandle
 {
 	friend GLSplitter;
 public:
-	GLSplitterHandle (Qt::Orientation orientation, QSplitter *parent = 0) : QSplitterHandle (orientation,parent){}
-	void paintEvent (QPaintEvent *event)
-	{
-		//QPainter painter(this);
-		//if (orientation() == Qt::Horizontal)
+	GLSplitterHandle (Qt::Orientation orientation, QSplitter *parent)
+	: QSplitterHandle (orientation,parent) {}
 
-		//QRect iRect (QPoint(this->width()-32,0), QPoint(this->width()-48,this->height()+12));
-		//painter.fillRect(event->rect(), QColor(200,200,0));
-		//painter.fillRect(iRect, QColor(200,200,0));
-	}
-	void mousePressEvent(QMouseEvent * e)
-	{
-		QMouseEvent *me = (QMouseEvent *) e;
-		int x = me->pos().x();
-		int y = me->pos().y();
-		std::cout << "GLSplitterHandle->MousePress-> x:" << this->width() << ", y:" << this->height() << std::endl;
-	}
-	void mouseMoveEvent(QMouseEvent * e)
-	{
-		QSplitterHandle::mouseMoveEvent (e);
-		//std::cout << "GLSplitterHandle->MouseMove" << std::endl;
-	}
-	void mouseReleaseEvent(QMouseEvent * e)
-	{
-		QSplitterHandle::mouseReleaseEvent (e);
-		//std::cout << "GLSplitterHandle->MouseRelease" << std::endl;
-	}
+	void mouseReleaseEvent(QMouseEvent * e);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class GLSplitter : public QSplitter
 {
 	Q_OBJECT
+	friend GLSplitterHandle;
 public:
-	GLSplitter () : QSplitter (), m_splitterhandle(NULL){};
-	GLSplitter (Qt::Orientation orientation, QWidget *parent = 0) : QSplitter (orientation,parent), m_splitterhandle(NULL){};
+	GLSplitter (Qt::Orientation orientation=Qt::Vertical, QWidget *parent = 0)
+		: QSplitter (orientation,parent), m_splitterhandle(NULL), m_lastsplit(-1)
+	{}
 	~GLSplitter (){ if(m_splitterhandle) delete m_splitterhandle; }
 
+signals:
+	void splitterInited (int);
+
 public slots:
-	void splitting(int y) {
-		//std::cout << "GLSplitter->splitting slot " << y << std::endl;
-		if(m_splitterhandle) m_splitterhandle->moveSplitter(y);
+	void pressing(int y)
+	{
+		qDebug() << "GLSplitter->pressing slot " << y << ", " << m_lastsplit;
+
+		QList<int> ymlist = this->sizes();
+		if(ymlist.at(1) == 0)
+		{
+			int nSplit = m_lastsplit<48? ymlist.at(0)-140 : m_lastsplit;
+			emit splitterInited (nSplit);
+			if(m_splitterhandle) m_splitterhandle->moveSplitter (nSplit);
+		}else
+		{
+			emit splitterInited (0);
+			qDebug() << "... closing snapviewer " << this->width();
+			if(m_splitterhandle) m_splitterhandle->moveSplitter (this->width());
+		}
+	}
+	void splitting(int y)
+	{
+		//qDebug() << "GLSplitter->splittin " << y;
+		m_lastsplit = y;
+
+		//re-build snapshots viwer
+		emit splitterInited (m_lastsplit);
+
+		//we're draggin our custom handle, update the splitter handle
+		if(m_splitterhandle) m_splitterhandle->moveSplitter(m_lastsplit);
 	}
 
 protected:
-	QSplitterHandle * createHandle()
+	virtual QSplitterHandle * createHandle()
 	{
 		m_splitterhandle = new GLSplitterHandle (orientation(), this);
 		return m_splitterhandle;
 	}
+
+	void setLastSplit (int iSplit) { m_lastsplit=iSplit; }
+
 private:
+	int m_lastsplit;
 	GLSplitterHandle * m_splitterhandle;
 };
 
@@ -163,7 +175,9 @@ protected:
     bool eventFilter (QObject *object, QEvent *event);
 
 private:
+    bool m_isinitialized;
     bool m_isdragging;
+    bool m_ispressing;
     QRect m_qpix_rect;
     QPixmap * m_qpix;
     GLViewer * m_widget;
@@ -363,6 +377,7 @@ signals:
 	void verboseStream(QString);
 	void rendererStatus(int);
 
+	void splitterPressed(int);
 	void splitterMoved(int);
 
 	void init ();

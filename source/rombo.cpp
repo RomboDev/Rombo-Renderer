@@ -2,25 +2,35 @@
 
 MainWindow::MainWindow (int argc, char *argv[])
 {
-	 // main GL renderer view
-	 rGLDevice = new GLViewer (argc,argv);
+	// Viewer plitter
+	glSplitter = new GLSplitter();
+	glSplitter->setOrientation(Qt::Vertical);
+	glSplitter->setHandleWidth(2);
+	//glSplitter->setOpaqueResize(false);
 
-	 rGLDevice->setBackgroundRole (QPalette::Dark);
-	 //QPalette p( rGLDevice->palette() );
-	 //p.setColor( QPalette::Window, Qt::black );
-	 //rGLDevice->setPalette( p );
+	// GL renderer viewer
+	rGLDevice = new GLViewer (argc,argv);
+	rGLDevice->setBackgroundRole (QPalette::Dark);
+	//QPalette p( rGLDevice->palette() );
+	//p.setColor( QPalette::Window, Qt::black );
+	//rGLDevice->setPalette( p );
+	glSplitter->addWidget (rGLDevice);
+	glSplitter->setStretchFactor(0,1);
 
-	 glSplitter = new GLSplitter();
-	 glSplitter->setOrientation(Qt::Vertical);
-	 glSplitter->setHandleWidth(2);
-	 glSplitter->setOpaqueResize(false);
+	// Snapshot viewer
+	rSnapshotsViewer = new SnapshotsViewer (glSplitter);
+	glSplitter->addWidget (rSnapshotsViewer);
+	glSplitter->setStretchFactor(1,0);
 
-	 glSplitter->addWidget (rGLDevice);
-	 glSplitter->addWidget (new QPlainTextEdit);
+	// Set the initial sizes for QSplitter widgets
+	QList<int> sizes;
+	sizes << 100 << 0;
+	glSplitter->setSizes(sizes);
 
 #ifndef GFXVIEW
 	 rGLDevice->setMinimumSize(512,360);
 	 setCentralWidget( glSplitter );	//add it to the window
+
 #else
 
 	 glView = new RenderGLView;
@@ -56,18 +66,28 @@ MainWindow::MainWindow (int argc, char *argv[])
     addDockWidget(Qt::RightDockWidgetArea, consoleDockWidget);
 
 
-    // rig slots and signaling
+    //!> Rig slots and signaling <!//
+
+    //for GLDevice handle to update QSplitter
     connect(	rGLDevice, 	SIGNAL (splitterMoved (int)),
     			glSplitter, SLOT   (splitting (int)) );
+    connect(	rGLDevice, 	SIGNAL (splitterPressed (int)),
+    			glSplitter, SLOT   (pressing (int)) );
+
+    //for QSplitter to update Snapshots viewer
+    connect(	glSplitter, 		SIGNAL (splitterInited (int)),
+    			rSnapshotsViewer, 	SLOT   (initializing (int)) );
+
+    // for Snapshots viewer to pause GLViewer renderer
+    connect(	rSnapshotsViewer, 	SIGNAL (devicePainting (int)),
+    			rGLDevice, 			SLOT   (deviceIsPainting (int)) );
+
 
     connect(	rGLDevice, 	SIGNAL (verboseStream (QString)),
    		 		outConsole, SLOT   (appendPlainText (QString)) );
 
     connect(	rGLDevice, 	SIGNAL (rendererStatus (int)),
    		 		this, 		SLOT   (setRenderStatusBar (int)) );
-
-    connect(	this, 		SIGNAL (sceneFileLoaded (std::string)),
-   		 		rGLDevice, 	SLOT   (parseSceneAndRender (std::string)) );
 
     connect(	this, 		SIGNAL (renderVerbosityChanged (int)),
    		 		rGLDevice, 	SLOT   (setRenderVerbosity (int)) );
@@ -77,6 +97,9 @@ MainWindow::MainWindow (int argc, char *argv[])
 
     connect(	this, 		SIGNAL (renderStatusChanged (int)),
    		 		this, 		SLOT   (setRenderStatusBar (int)) );
+
+    connect(	this, 		SIGNAL (sceneFileLoaded (std::string)),
+   		 		rGLDevice, 	SLOT   (parseSceneAndRender (std::string)) );
 
     connect(	this, 		SIGNAL (sceneUnloading ()),
    		 		rGLDevice, 	SLOT   (flushScene ()) );
@@ -161,6 +184,9 @@ void MainWindow::closeScene()
 	 renderStopAct->setEnabled(false);
 
 	 emit sceneUnloading();
+
+	 delete rSnapshotsViewer;
+	 rSnapshotsViewer = NULL;
 
 	 rGLDevice->deleteLater();
 	 //delete rGLDevice;

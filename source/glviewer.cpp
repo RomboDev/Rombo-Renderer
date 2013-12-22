@@ -7,19 +7,35 @@
 
 #include "glviewer.h"
 
-////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void UndoRedo::connectDevice (OverlayItemsController* iSettingCtrl)
 {
 	connect (	this, 			SIGNAL 	(undo_redo			(int, int, QVariant)),
 				iSettingCtrl, 	SLOT 	(viewerUndoRedo		(int, int, QVariant)) );
 }
 
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-GLViewerSplitterHandle::GLViewerSplitterHandle (GLViewer *widget) : m_widget(widget), m_isdragging(false)
+void GLSplitterHandle::mouseReleaseEvent(QMouseEvent * e)
+{
+	Q_UNUSED( e );
+
+	//update GLSplitter lastsplit
+	QSplitter *iSplitter = this->splitter();
+	QList<int> ymlist = iSplitter->sizes();
+	int lastSplitFromHandle = iSplitter->size().height() -ymlist.at(1) -this->height();
+	reinterpret_cast<GLSplitter*>(iSplitter)->setLastSplit (lastSplitFromHandle);
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+GLViewerSplitterHandle::GLViewerSplitterHandle (GLViewer *widget)
+	: m_widget(widget), m_qpix(new QPixmap ("./images/gloverlay/main_snapshot_handle.png"))
+	, m_isinitialized(false), m_isdragging(false), m_ispressing(false)
 {
 	registerDevice ();
-
-	m_qpix = new QPixmap ("./images/gloverlay/main_snapshot_handle.png");
 }
 void GLViewerSplitterHandle::registerDevice ()
 {
@@ -75,8 +91,9 @@ bool GLViewerSplitterHandle::eventFilter (QObject *object, QEvent *event)
 			{
 				//start draggin
 				m_isdragging = true;
-
+				m_ispressing = true;
 				QApplication::setOverrideCursor(QCursor(Qt::ClosedHandCursor));
+
 				return true; //stop event propagation
 			}
 		}break;
@@ -88,6 +105,7 @@ bool GLViewerSplitterHandle::eventFilter (QObject *object, QEvent *event)
 		{
 			if(m_isdragging)
 			{
+				m_ispressing = false;
 #ifndef GFXVIEW
 				QMouseEvent *me = (QMouseEvent *) event;
 				int dX = me->pos().x();
@@ -107,9 +125,16 @@ bool GLViewerSplitterHandle::eventFilter (QObject *object, QEvent *event)
         case QEvent::GraphicsSceneMouseRelease:
 #endif
 		{
+			if(m_ispressing)
+			{
+				m_ispressing = false;
+				m_widget->emit splitterPressed (m_isinitialized);
+				m_isinitialized = !m_isinitialized;
+			}
 			if(m_isdragging)
 			{
 				m_isdragging = false;
+				m_isinitialized = !m_isinitialized;
 				QApplication::restoreOverrideCursor();
 				emit devicePainting (false);
 			}
@@ -1095,6 +1120,7 @@ void GLViewer::drawBackground(QPainter *painter, const QRectF &rect)
 
 	painter.endNativePainting();
 	painter.end();
+
 #else
     emit painting (painter);
     painter->endNativePainting();
