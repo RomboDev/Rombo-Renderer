@@ -7,3 +7,5 @@ QT based GUI with advanced features like a resizable render region with one-clic
 
 ![Screenshot1](https://github.com/RomboDev/rombo/blob/alpha_001/screenshots/rombo_snapshot.png?raw=true)
 ![Screenshot2](https://github.com/RomboDev/rombo/blob/alpha_001/screenshots/rombo_snapshot4b.png?raw=true)
+![Screenshot3](https://github.com/RomboDev/rombo/blob/alpha_001/screenshots/rombo_snapshot8.png?raw=true)
+
